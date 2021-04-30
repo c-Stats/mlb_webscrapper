@@ -35,20 +35,14 @@ setup(
     author_email = 'frankfredj@gmail.com',
 
     packages = find_packages(),
-    package_dir={"": "mlb_webscrapper"},
-    py_module = ["mlb_webscrapper", "path"],
 
     install_requires = ["pandas", "requests", "bs4",
                 "numpy", "tqdm", "path"],
 
-    cmdclass={
-        "package": Package
-    }
-
     version = '0.1',
  
     license = 'none',
-    description = 'webscrapes MLB player stats and scores',
+    description = 'webscrapes MLB player stats and scores'
 
 )
 
