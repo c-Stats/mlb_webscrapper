@@ -8,11 +8,12 @@ setup(
     author_email = 'frankfredj@gmail.com',
 
     packages = find_packages(),
+    py_module = ["mlb_webscrapper", "path"],
 
     install_requires = ["pandas", "requests", "bs4",
                 "numpy", "tqdm", "path"],
 
-     cmdclass={
+    cmdclass={
         "package": Package
     }
 
