@@ -1,4 +1,5 @@
-from setuptools import setup
+from setuptools import find_packages, setup
+from package import Package
 
 setup(
     name = 'mlb_webscrapper',
@@ -6,10 +7,14 @@ setup(
     author = 'Francis F.',
     author_email = 'frankfredj@gmail.com',
 
-    packages = ['mlb_webscrapper', "pandas", "path"],
+    packages = find_packages(),
 
     install_requires = ["pandas", "requests", "bs4",
                 "numpy", "tqdm", "path"],
+
+     cmdclass={
+        "package": Package
+    }
 
     version = '0.1',
  
@@ -19,29 +24,3 @@ setup(
 )
 
 
-import pandas as pd
-import requests
-import urllib
-import numpy as np
-
-import os.path
-from os import path
-
-from bs4 import BeautifulSoup
-
-from datetime import datetime
-from datetime import timedelta
-
-import time
-import random
-
-from tqdm import tqdm
-
-import sys 
-
-from os import listdir
-from os.path import isfile, join
-
-import re
-
-pd.options.mode.chained_assignment = None
