@@ -9,7 +9,7 @@ setup(
     packages = ['mlb_webscrapper'],
 
     install_requires = ["pandas", "requests",
-                "numpy", "tqdm"],
+                "numpy", "tqdm", "path"],
 
     version = '0.1',
  
