@@ -9,13 +9,13 @@ setup(
     packages = ['mlb_webscrapper'],
 
     install_requires = ["pandas", "requests",
-                "numpy", "os", "datetime",
+                "numpy", "datetime",
                 "time", "random", "tqdm", "sys",
                 "re"],
 
     version = '0.1',
  
-    license = 'none',
+    license = 'None',
     description = 'webscrapes MLB player stats and scores',
 
 )
