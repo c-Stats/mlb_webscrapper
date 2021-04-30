@@ -1,5 +1,4 @@
 from setuptools import find_packages, setup
-from package import Package
 
 import pandas as pd
 import requests
