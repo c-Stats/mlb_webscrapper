@@ -6,7 +6,7 @@ setup(
     author = 'Francis F.',
     author_email = 'frankfredj@gmail.com',
 
-    packages = ['mlb_webscrapper'],
+    packages = ['mlb_webscrapper', "pandas"],
 
     install_requires = ["pandas", "requests", "bs4",
                 "numpy", "tqdm", "path"],
