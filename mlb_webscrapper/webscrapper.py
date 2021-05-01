@@ -7,6 +7,7 @@ class Baseball_Scrapper:
 		import urllib
 		import numpy as np
 
+		import posixpath as path
 		import os
 
 		from bs4 import BeautifulSoup
