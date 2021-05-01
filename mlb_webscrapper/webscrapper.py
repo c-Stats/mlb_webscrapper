@@ -7,8 +7,6 @@ class Baseball_Scrapper:
 		import urllib
 		import numpy as np
 
-		import posixpath as path
-
 		from bs4 import BeautifulSoup
 
 		from datetime import datetime
@@ -25,6 +23,7 @@ class Baseball_Scrapper:
 		from os.path import isfile, join
 
 		import re
+		import posixpath as path
 
 		pd.options.mode.chained_assignment = None
 
