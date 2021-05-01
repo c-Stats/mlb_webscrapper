@@ -4,7 +4,6 @@ import urllib
 import numpy as np
 
 import os.path
-from os import path
 
 from bs4 import BeautifulSoup
 
@@ -35,7 +34,7 @@ class Baseball_Scrapper:
 		#Create the repositories if they do not exist
 		#Main repo
 		target = file_path + "/MLB_Modeling"
-		if not path.exists(target):
+		if not os.path.exists(target):
 			os.mkdir(target)
 			print("Main directory created at:" + "\t" + target)
 
@@ -44,7 +43,7 @@ class Baseball_Scrapper:
 		for element in sub_directories:
 
 			target = dir_path + "/" + element
-			if not path.exists(target):
+			if not os.path.exists(target):
 				os.mkdir(target)
 				print("Sub-directory created at:" + "\t" + target)
 
@@ -56,7 +55,7 @@ class Baseball_Scrapper:
 
 
 		dictio_path = self.paths[4] + "/Abreviations_Dictionary.csv"
-		if path.exists(dictio_path):
+		if os.path.exists(dictio_path):
 			self.dictio = pd.read_csv(dictio_path)
 		else:
 			self.dictio = []
@@ -71,7 +70,7 @@ class Baseball_Scrapper:
 		final_path = save_path + "/" + file_name
 
 		try:
-			if not path.exists(final_path):
+			if not os.path.exists(final_path):
 				if len(data) > 0:
 					data.to_csv(final_path, index = False)
 
@@ -289,7 +288,7 @@ class Baseball_Scrapper:
 
 
 		#Check for dates which links were already scrapped
-		if path.exists(self.paths[-1] + "/Game_Dates.csv"):
+		if os.path.exists(self.paths[-1] + "/Game_Dates.csv"):
 			dates_done = list(pd.read_csv(self.paths[-1] + "/Game_Dates.csv")["Dates"])
 		else:
 			dates_done = []
@@ -442,14 +441,14 @@ class Baseball_Scrapper:
 	def Extract_FanGraphs_Box_Scores(self):
 
 		url_path = self.paths[-1] + "/Game_URLs.csv"
-		if path.exists(url_path):
+		if os.path.exists(url_path):
 
 			urls = list(set(list(pd.read_csv(url_path)["URL"])))
 			ID = 0
 
 			#Checks for existing Box_Scores
 			path_to_check = self.paths[2] + "/FanGraphs_Scores.csv"
-			if path.exists(path_to_check):
+			if os.path.exists(path_to_check):
 
 				temp = pd.read_csv(path_to_check)
 
@@ -636,12 +635,12 @@ class Baseball_Scrapper:
 
 		for i in range(0, (len(self.paths) - 1)):
 			path_string = self.paths[i] + sufix
-			if not path.exists(path_string):
+			if not os.path.exists(path_string):
 				os.mkdir(path_string)
 				print("Create sub-directory at:" + "\t" + path_string)
 
 		scores_path = self.paths[2] + "/FanGraphs_Scores.csv"
-		if not path.exists(scores_path):
+		if not os.path.exists(scores_path):
 			sys.exit("No data to clean.")
 		else:
 			scores = pd.read_csv(scores_path)[["Home", "Home_Score", "Away", "Away_Score", "Date", "URL", "ID"]]
@@ -653,7 +652,7 @@ class Baseball_Scrapper:
 		for i in range(0,2):
 
 			path_string = self.paths[i] + "/FanGraphs_Box_Scores.csv"
-			if not path.exists(path_string):
+			if not os.path.exists(path_string):
 				sys.exit("Missing file:" + "\t" + path_string)
 			else:
 				frames.append(pd.read_csv(path_string, dtype={'a': str})) 
@@ -815,7 +814,7 @@ class Baseball_Scrapper:
 
 		#Set sub-directory up
 		path_data = self.paths[3] + "/Clean_Data"
-		if not path.exists(path_data):
+		if not os.path.exists(path_data):
 			os.mkdir(path_data)
 			print("Created sub-directory at:" + "\t" + path_data)
 
@@ -840,7 +839,7 @@ class Baseball_Scrapper:
 
 			year = x.split("%")[-1].split(".")[0][2:]
 			path_save = self.paths[3] + "/MLB_Odds_" + str(year) + ".csv"
-			if not path.exists(path_save) or year == str(datetime.now().year):
+			if not os.path.exists(path_save) or year == str(datetime.now().year):
 
 				file = pd.read_excel(x)
 				file.to_csv(path_save, index = False)
@@ -863,7 +862,7 @@ class Baseball_Scrapper:
 		for i in tqdm(range(2010, (datetime.now().year + 1))):
 
 			path_check = self.paths[3] + "/MLB_Odds_" + str(i) + ".csv"
-			if path.exists(path_check):
+			if os.path.exists(path_check):
 
 				temp = pd.read_csv(path_check).reset_index(drop = True)
 				temp.columns = temp.columns.str.replace(" ", "")
@@ -998,7 +997,7 @@ class Baseball_Scrapper:
 
 
 		path_scores = self.paths[2] + "/Clean_Data/FanGraphs_Scores.csv"
-		if path.exists(path_scores):
+		if os.path.exists(path_scores):
 
 			print("\t" + "\t" + "\t" + "***** Adding IDs *****")
 
@@ -1032,7 +1031,7 @@ class Baseball_Scrapper:
 	def UPDATE_FanGraphs_Box_Scores(self):
 
 		path_check = self.paths[2] + "/FanGraphs_Scores.csv"
-		if not path.exists(path_check):
+		if not os.path.exists(path_check):
 			sys.exit("Missing file:" + "\t" + path_check)
 
 		temp = pd.read_csv(path_check)
@@ -1057,7 +1056,7 @@ class Baseball_Scrapper:
 	def Extract_FanGraphs_Box_Scores_FROM_MISSING_MATCHES(self):
 
 		url_path = self.paths[-1] + "/Missing_Matches.csv"
-		if path.exists(url_path):
+		if os.path.exists(url_path):
 
 			file_missing_urls = pd.read_csv(url_path)
 
@@ -1065,7 +1064,7 @@ class Baseball_Scrapper:
 
 			#Checks for existing Box_Scores
 			path_to_check = self.paths[2] + "/FanGraphs_Scores.csv"
-			if path.exists(path_to_check):
+			if os.path.exists(path_to_check):
 				urls_done = list(pd.read_csv(path_to_check).drop_duplicates()["URL"])
 
 				urls = [x for x in urls if x not in urls_done]
@@ -1296,13 +1295,13 @@ class Baseball_Scrapper:
 
 		#Fix player names
 		path_check = self.paths[0] + "/Clean_Data/FanGraphs_Box_Scores.csv"
-		if not path.exists(path_check):
+		if not os.path.exists(path_check):
 			sys.exit("Missing file:" + "\t" + path_check)
 
 		batters = list(set(list(pd.read_csv(path_check)["Name"])))
 
 		path_check = self.paths[1] + "/Clean_Data/FanGraphs_Box_Scores.csv"
-		if not path.exists(path_check):
+		if not os.path.exists(path_check):
 			sys.exit("Missing file:" + "\t" + path_check)
 
 		pitchers = list(set(list(pd.read_csv(path_check)["Name"])))	
@@ -1333,7 +1332,7 @@ class Baseball_Scrapper:
 		for i in range(0, len(file_names)):
 			path_check = self.paths[3] + "/Predicted_Lineups/" + file_names[i]
 
-			if not path.exists(path_check):
+			if not os.path.exists(path_check):
 				file[i].to_csv(path_check, index = False)
 
 				if(i == 0):
@@ -1423,7 +1422,7 @@ class Baseball_Scrapper:
 
 		#Retrieve the score file
 		path_check = self.paths[2] + "/Clean_Data/FanGraphs_Scores.csv"
-		if not path.exists(path_check):
+		if not os.path.exists(path_check):
 			sys.exit("Missing file:" + "\t" + path_check)
 
 		scores = pd.read_csv(path_check) 
@@ -1442,7 +1441,7 @@ class Baseball_Scrapper:
 		#Player names
 		#Match names with the original database
 		path_check = self.paths[0] + "/Clean_Data/FanGraphs_Box_Scores.csv"
-		if not path.exists(path_check):
+		if not os.path.exists(path_check):
 			sys.exit("Missing file:" + "\t" + path_check)
 
 		batters = pd.read_csv(path_check)["Name"]
@@ -1450,7 +1449,7 @@ class Baseball_Scrapper:
 
 
 		path_check = self.paths[1] + "/Clean_Data/FanGraphs_Box_Scores.csv"
-		if not path.exists(path_check):
+		if not os.path.exists(path_check):
 			sys.exit("Missing file:" + "\t" + path_check)
 
 		pitchers = pd.read_csv(path_check)["Name"]
@@ -1462,7 +1461,7 @@ class Baseball_Scrapper:
 		years_done = []
 
 		path_check = self.paths[1] + "/Clean_Data/Lineups_BR.csv"
-		if path.exists(path_check):
+		if os.path.exists(path_check):
 			
 			years_done = [x for x in list(set(list(pd.read_csv(path_check)["Date"].str.split("-").str[0].astype(int)))) if x != datetime.now().year]
 
