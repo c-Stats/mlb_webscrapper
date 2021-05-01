@@ -8,7 +8,7 @@ pip install git+https://github.com/c-Stats/mlb_webscrapper.git#egg=mlb_webscrapp
 
 ``` 
 
-Onces this is done, you can call the webscrapper, i.e.:
+Once this is done, you can call the webscrapper, i.e.:
 
 ``` python
 
