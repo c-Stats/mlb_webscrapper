@@ -8,7 +8,6 @@ class Baseball_Scrapper:
 		import numpy as np
 
 		import os.path
-		from os import path
 
 		from bs4 import BeautifulSoup
 
