@@ -2,31 +2,6 @@ class Baseball_Scrapper:
 
 	def __init__(self, file_path):
 
-		import pandas as pd
-		import requests
-		import urllib
-		import numpy as np
-
-		from bs4 import BeautifulSoup
-
-		from datetime import datetime
-		from datetime import timedelta
-
-		import time
-		import random
-
-		from tqdm import tqdm
-
-		import sys 
-
-		from os import listdir
-		from os.path import isfile, join
-
-		import re
-		import posixpath as path
-
-		pd.options.mode.chained_assignment = None
-
 		self.file_path = file_path
 		dir_path = file_path + "/MLB_Modeling"
 
