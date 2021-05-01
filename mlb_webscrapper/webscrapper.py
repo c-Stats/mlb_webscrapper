@@ -1046,7 +1046,6 @@ class Baseball_Scrapper:
 		n_new = len(pd.read_csv(path_check))
 		if n_new > n:
 			self.Clean_Data()
-			self.Scrape_Historical_Predicted_Lineups()
 		else:
 			print("No new Box Scores to scrape.")
 
