@@ -22,7 +22,12 @@ from os.path import isfile, join
 
 import re
 
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+
 pd.options.mode.chained_assignment = None
+
 
 class Baseball_Scrapper:
 
@@ -59,8 +64,6 @@ class Baseball_Scrapper:
 			self.dictio = pd.read_csv(dictio_path)
 		else:
 			self.dictio = []
-
-		self.chrome_webdriver_path = os.getcwd()
 
 
 		print("Scapper succesfully initiated.")
@@ -1053,77 +1056,9 @@ class Baseball_Scrapper:
 
 
 
-	#Extracts the box scores based off the URL list
-	def Extract_FanGraphs_Box_Scores_FROM_MISSING_MATCHES(self):
-
-		url_path = self.paths[-1] + "/Missing_Matches.csv"
-		if os.path.exists(url_path):
-
-			file_missing_urls = pd.read_csv(url_path)
-
-			urls = list(set(list(file_missing_urls["URL"])))
-
-			#Checks for existing Box_Scores
-			path_to_check = self.paths[2] + "/FanGraphs_Scores.csv"
-			if os.path.exists(path_to_check):
-				urls_done = list(pd.read_csv(path_to_check).drop_duplicates()["URL"])
-
-				urls = [x for x in urls if x not in urls_done]
-
-
-			#Initialise variables
-
-			bat = []
-			pitch = []
-			scores = []
-
-			count = 0
-			n = len(urls)
-
-			print("Extracting " + str(n) + " Box Scores...")
-			#e_time = round((((45/2) + 3) * n) / 60, 2)
-			#print("Estimated running time:" + "\t" + str(e_time) + " minutes")
-
-			#Loop throught URLs 
-			for i in tqdm(range(0, n)):
-
-				url = str(urls[i])
-				count += 1
-				try:
-					tables = self.Scrape_FanGraphs_game_stats_by_url(url)
-				except:
-					time.sleep(random.randint(5,10))
-					continue
-
-				bat = self.update_frame(bat, tables[0].append(tables[1]))
-				pitch = self.update_frame(pitch, tables[2].append(tables[3]))
-				scores = self.update_frame(scores, tables[4])
-
-				print("\t" + "\t" + "\t" + "***** ADDED GAME *****")
-				print(scores.iloc[-1,:])
-
-				#print(scores)
-
-				if count % 20 == 0 or url == urls[-1]:
-
-					self.update_file(self.paths[0], "FanGraphs_Box_Scores.csv", bat)	
-					bat = []
-
-					self.update_file(self.paths[1], "FanGraphs_Box_Scores.csv", pitch)	
-					pitch = []					
-
-					self.update_file(self.paths[2], "FanGraphs_Scores.csv", scores)	
-					scores = []
-
-					print("\t" + "\t" + "\t" + "***** PROGRESS SAVED *****")
-
-				if url != urls[-1]:
-					time.sleep(random.randint(3, 7))
-
-
 
 	##############################################################################
-	#################### PREDICTED LINEUPS AND MONEYLINES  #######################
+	#################### PREDICTED LINEUPS                 #######################
 	##############################################################################
 	
 
@@ -1219,204 +1154,6 @@ class Baseball_Scrapper:
 		moneylines = moneylines.reset_index(drop = True)
 
 		return [bat, pitch, moneylines]
-
-
-
-	def Betting_Webscrape(self):
-
-		date = datetime.strftime(datetime.now(), "%Y-%m-%d")
-		
-		url = "https://miseojeu.lotoquebec.com/fr/offre-de-paris/baseball/mlb/matchs?idAct=11"
-
-		headers = {
-	    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
-		}
-
-		print("Accessing Loto-Quebec website...")
-
-		#Obtain page data
-		html = requests.get(url , stream = True, headers = headers).content
-		try:
-			tables = pd.read_html(html)
-			soup = BeautifulSoup(html)
-		except:
-			print("Error: No bets found   ----   Too early, or no games today.")
-			return 0
-
-		#Obtain moneylines
-		moneylines = [x for x in tables if len(x.columns) == 4]
-		moneylines = [x for x in moneylines if "Baseball  MLB" in x.iloc[0,1]]
-
-		billet = pd.DataFrame([moneylines[0].iloc[0,1], moneylines[0].iloc[0,2]]).T
-
-		for x in moneylines[1:]:
-			temp = pd.DataFrame([x.iloc[0,1], x.iloc[0,2]]).T
-
-			if "pt(s)" in temp.iloc[0,0]:
-				break
-			
-			else:
-				billet = billet.append(temp, ignore_index = True)
-
-		billet.columns = ["Home", "Away"]
-
-		teams = []
-		returns = []
-
-		for j in range(0, 2):
-
-			temp = billet.iloc[:,j]
-			nm = temp.str.split("  ")
-
-			t = []
-			r = []
-			for i in range(0, len(temp)):
-
-				t.append(nm[i][2])
-				r.append(float(nm[i][3].replace(",", ".")))
-
-
-			teams.append(t)
-			returns.append(r)
-
-
-		out = pd.DataFrame([teams[1], returns[1], teams[0], returns[0]]).T
-		out.columns = ["Team_Home", "Factor_Home", "Team_Away", "Factor_Away"]
-		out["Date"] = str(datetime.now()).split(" ")[0]
-
-		out = self.Fix_Team_Names(out, "City")
-
-
-		#Obtain predicted lineups
-		lineups = self.Scrape_Historical_Predicted_Lineups_from_date(date)
-
-		#Fix team names
-		for i in range(0, len(lineups)):
-			lineups[i] = self.Fix_Team_Names(lineups[i], "City")
-
-		#Fix player names
-		path_check = self.paths[0] + "/Clean_Data/FanGraphs_Box_Scores.csv"
-		if not os.path.exists(path_check):
-			sys.exit("Missing file:" + "\t" + path_check)
-
-		batters = list(set(list(pd.read_csv(path_check)["Name"])))
-
-		path_check = self.paths[1] + "/Clean_Data/FanGraphs_Box_Scores.csv"
-		if not os.path.exists(path_check):
-			sys.exit("Missing file:" + "\t" + path_check)
-
-		pitchers = list(set(list(pd.read_csv(path_check)["Name"])))	
-
-		bat = lineups[0]
-		pitch = lineups[1]
-		moneylines = lineups[2]
-
-		#Fix player names
-		for i in range(0, len(bat)):
-			bat.at[i, "Name"] = self.find_name(str(bat.at[i, "Name"]), str(bat.at[i, "Team"]), batters)
-
-			if i < len(pitch):		
-				pitch.at[i, "Name"] = self.find_name(str(pitch.at[i, "Name"]), str(pitch.at[i, "Team"]), pitchers)
-
-
-		#Merge LotoQc and the moneylines
-		del moneylines["Date"] 
-
-		billet = pd.merge(out, moneylines, on = ["Team_Home", "Team_Away"], how = "left").dropna()
-		billet = billet.drop_duplicates(["Team_Home", "Team_Away"], keep = "first").reset_index(drop = True)
-
-		#Update or save
-		file_names = ["LotoQc_Moneylines.csv", "LotoQc_Batters.csv", "LotoQc_Pitchers.csv"]
-		file = [billet, bat, pitch]
-
-
-		for i in range(0, len(file_names)):
-			path_check = self.paths[3] + "/Predicted_Lineups/" + file_names[i]
-
-			if not os.path.exists(path_check):
-				file[i].to_csv(path_check, index = False)
-
-				if(i == 0):
-					print(file[i])
-
-			else:
-
-				if i == 0:
-					old_data = pd.read_csv(path_check)
-					new_data = file[i].append(old_data, sort = True).reset_index(drop = True)
-					new_data = new_data.drop_duplicates(["Team_Home", "Team_Away", "Date"], keep = "first").reset_index(drop = True)
-
-					new_data.to_csv(path_check, index = False)
-					print(file[i])
-
-				else:
-
-					old_data = pd.read_csv(path_check)
-					keep = np.where(old_data["Date"] != date)[0]
-
-					if len(keep) == 0:
-						file[i].to_csv(path_check, index = False)
-					else:
-						old_data = old_data.loc[keep, :]
-						new_data = file[i].append(old_data, sort = True).reset_index(drop = True)
-						new_data.to_csv(path_check, index = False)	
-
-
-		#Add IDs
-		all_files = []
-		for x in file_names:
-			all_files.append(pd.read_csv(self.paths[3] + "/Predicted_Lineups/" + x))
-
-		all_files[0]["ID"] = np.arange(0, len(all_files[0]))
-		sub_frame = all_files[0][["Date", "ID"]].copy()
-		sub_frame2 = sub_frame.copy()
-
-		sub_frame["Team"] = all_files[0].loc[:, "Team_Home"].copy()
-		sub_frame2["Team"] = all_files[0].loc[:, "Team_Away"].copy()
-
-		sub_frame = sub_frame.append(sub_frame2, sort = True).reset_index(drop = True)
-
-		for i in range(1, len(all_files)):
-			all_files[i] = all_files[i].merge(sub_frame, on = ["Date", "Team"], how = "left").dropna().reset_index(drop = True)
-			all_files[i]["ID"] = all_files[i]["ID"].astype(int).copy()
-
-		#Remove IDs with missing data
-		bad_IDs = []
-		for i in range(1, len(all_files)):
-			rmv = np.where(all_files[i]["Name"] == "None")[0]
-			if len(rmv) > 0:
-				bad_IDs.append(list(set(list(all_files[i].loc[rmv, "ID"]))))
-
-		if len(bad_IDs) > 0:
-
-			bad_IDs = np.array(list(chain(*bad_IDs)))
-			for i in range(0, len(all_files)):
-
-				keep = [j for j in range(0, len(all_files[i])) if all_files[i].at[j, "ID"] not in bad_IDs]
-				all_files[i] = all_files[i].loc[keep, :].copy().reset_index(drop = True)
-
-
-		#Remove double-day matches from the bat and pitch files
-		for ids in list(all_files[0]["ID"]):
-
-			index = np.where(all_files[1]["ID"] == ids)[0]
-			if len(index) > 9*2:
-				index = index[int(len(index)/2):]
-				all_files[1] = all_files[1].drop(index, axis = 0).reset_index(drop = True)
-
-			index = np.where(all_files[2]["ID"] == ids)[0]
-			if len(index) > 2:
-				index = index[int(len(index)/2):]
-				all_files[2] = all_files[2].drop(index, axis = 0).reset_index(drop = True)
-
-
-		#Save
-		file_names = ["LotoQc_Moneylines_Clean.csv", "LotoQc_Batters_Clean.csv", "LotoQc_Pitchers_Clean.csv"]
-		for i in range(0, len(file_names)):
-			all_files[i].to_csv(self.paths[3] + "/Predicted_Lineups/" + file_names[i], index = False)
-
-		self.Webscrape_LotoQc2()
-
 
 
 	def Scrape_BASEBALL_REFERENCE_lineups(self):
@@ -1659,153 +1396,377 @@ class Baseball_Scrapper:
 			pitch = []
 
 
-	def Webscrape_LotoQc2(self):
 
+	##############################################################################
+	#################### AVAIBLE BETS                      #######################
+	##############################################################################
+
+
+	def Scrape_Bets(self, driver):
+
+		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
+		time.sleep(1.5)
+
+		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
+		n_avb = len(matches_containers)
+
+
+		# In[498]:
+
+
+		#expand the match list
+		more_matches = driver.find_element_by_class_name("content-loader__load-more-link")
+		if str(type(more_matches)) == "<class 'selenium.webdriver.remote.webelement.WebElement'>":
+		    more_matches.click()
+		    
+		    matches_containers = driver.find_elements_by_class_name("event-list__item-link")
+		    
+		    #Keep loading until the new matches pop up
+		    while len(matches_containers) == n_avb:
+		        time.sleep(1)
+		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
+
+
+		# In[499]:
+
+
+		#html containers with the links to every match
+		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
+
+
+		# In[500]:
+
+
+		#get the time at which the matches are played
+		times = []
+
+		for containers in matches_containers:
+
+		    div_item = containers.find_element_by_class_name("event-card__event-time")
+		    match_time = div_item.get_attribute("innerHTML").split("</span>")[1].split(">")[-1].strip()
+		    times.append(match_time.replace("Aujourd'hui ", ""))
+
+
+		# In[501]:
+
+
+		#get the urls for the individual match webpages
+		match_urls = []
+		for containers in matches_containers:
+		    match_urls.append(containers.find_element_by_class_name("event-list__item-link-anchor").get_attribute("href"))
+
+
+		# In[502]:
+
+
+		#process all pages
+
+		frames = []
+
+		print("Retrieving avaible bets...")
+		estimated_w_time = round((20.0 * len(frames)) / 60)
+		print("Estimated processing time: " + estimated_w_time + "min(s)")
+
+		for url in tqdm.tqdm(match_urls):
+		    
+		    driver.get(url)
+		    
+		    #html containers with offered returns
+		    bet_containers = driver.find_elements_by_class_name("event-panel")
+		    
+		    #wait for the page to load
+		    while len(bet_containers) == 0:
+		        time.sleep(1)
+		        bet_containers = driver.find_elements_by_class_name("event-panel")
+		        
+
+		    bet_frames = []
+
+		    #extract team names, rates and bet type
+		    for containers in bet_containers:
+
+		        #Extract bets offered
+		        offers = containers.find_elements_by_class_name("market__body_col")
+		        rows = []
+
+		        bet_type = containers.find_element_by_class_name("event-panel__heading").text
+
+		        for x in offers:
+
+		            x_separated = x.text.rsplit("\n", 1)  
+		            rows.append([bet_type, x_separated[0], x_separated[1]])
+
+		        #Merge to main frame
+		        to_append = pd.DataFrame(rows, columns = ["Bet_Type", "Bet_On", "Factor"])
+		        if len(bet_frames) == 0:
+		            bet_frames = to_append
+		        else:
+		            bet_frames = bet_frames.append(to_append, ignore_index = True)
+		    
+		   #Expand menu
+		    expand_links = driver.find_elements_by_class_name("event-panel__heading__market-name")
+		    for link in expand_links:
+		        try:
+		            link.click() 
+		            
+		        except:
+		            continue
+		    
+		    #To be safe
+		    time.sleep(1)
+		        
+		    #repeat process
+		    bet_containers = driver.find_elements_by_class_name("event-panel")
+
+		    #extract team names, rates and bet type
+		    for containers in bet_containers:
+
+		        #Extract bets offered
+		        offers = containers.find_elements_by_class_name("market__body_col")
+		        rows = []
+
+		        bet_type = containers.find_element_by_class_name("event-panel__heading").text
+
+		        for x in offers:
+
+		            x_separated = x.text.rsplit("\n", 1)  
+		            if len(x_separated) == 1:
+		                continue
+
+		            rows.append([bet_type, x_separated[0], x_separated[1]])
+
+		        #Merge to main frame
+		        to_append = pd.DataFrame(rows, columns = ["Bet_Type", "Bet_On", "Factor"])
+		        if len(bet_frames) == 0:
+		            bet_frames = to_append
+		        else:
+		            bet_frames = bet_frames.append(to_append, ignore_index = True)   
+		            
+		    
+		    #Add the date and time
+		    bet_frames["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+		    
+		    frames.append(bet_frames)
+		    
+		    
+
+
+		# In[503]:
+
+
+		#Process the match 
+		#I.e.: clean some stuff
+		for i in range(0, len(frames)):
+		    
+		    refs_and_teams = match_urls[i].rsplit("/", 1)[-1].split("--")
+		    
+		    teams = list(frames[i].loc[np.where(frames[0]["Bet_Type"] == "GAGNANT À 2 ISSUES")[0]]["Bet_On"])
+		    teams = [x.replace("(", "").replace(")", "") for x in teams]
+		    teams = [x.replace("Philadelphie", "Philadelphia") for x in teams]
+		    
+		    refs = []
+		    
+		    for j in range(0, len(refs_and_team)):
+		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
+
+		    if "h" in times[i] or "m" in times[i]:
+		        h = 0
+		    if "h" in times[i]:
+		        h += int(times[i].split("h")[0])
+
+		    m = 0
+		    if "m" in times[i]:
+		        mins = times[i].split("m")[0] 
+
+		        if "h" in mins:
+		            m += int(mins.split("h")[-1])
+		        else:
+		            m += int(mins)  
+		            
+		        gametime = datetime.strptime(frames[i].at[0, "Date"], "%d/%m/%Y %H:%M:%S")
+		        gametime += timedelta(hours = h, minutes = m)
+		        gametime = gametime.strftime("%d/%m/%Y %H:%M:%S").split(" ")[-1].rsplit(":", 1)[0]
+
+		    else:
+
+		        gametime = times[i]
+
+
+		    frames[i]["Game_Time"] = gametime
+		    
+		    frames[i].loc[:, "Scrapping_Time"] = frames[i]["Date"].str.split(" ", expand = True).iloc[:, 1]
+		    frames[i].loc[:, "Scrapping_Time"] = frames[i]["Scrapping_Time"].str.rsplit(":", 1, expand = True).iloc[:, 0]
+		    
+		    frames[i].loc[:, "Date"] = frames[i]["Date"].str.split(" ", expand = True).iloc[:, 0]
+		    
+		    frames[i]["Team_Home"] = teams[-1]
+		    frames[i]["Team_Away"] = teams[0]
+		    
+		    frames[i]["Ref_Home"] = refs[-1]
+		    frames[i]["Ref_Away"] = refs[0]
+		    
+		    frames[i].loc[:, "Factor"] = pd.to_numeric(frames[i]["Factor"].str.replace(",", "."))
+		    
+		    
+
+		            
+
+
+		# In[504]:
+
+
+		print("Done.")
+		print("Closing webdriver.")
+		driver.quit()
+
+
+		# In[505]:
+
+
+		#More data cleaning
+		for i in range(0, len(frames)):
+		    
+		    frames[i].loc[:, "Bet_On"] = frames[i]["Bet_On"].str.replace("(", "", regex=True).str.replace(")", "", regex=True)
+		    frames[i].loc[:, "Bet_Type"] = frames[i]["Bet_Type"].str.replace("(", "", regex=True).str.replace(")", "", regex=True)
+
+		    frames[i]["Bet_On2"] = "None"
+		    frames[i]["Bet_Spread"] = 0.0
+
+		    #Add a column indicating if you are betting on the home, or visiting team
+		    for j in range(0, len(frames[i])):
+
+		        if frames[i].at[j, "Team_Home"] in frames[i].at[j, "Bet_On"] or frames[i].at[j, "Team_Home"] in frames[i].at[j, "Bet_Type"]:
+		            frames[i].at[j, "Bet_On2"] = "Home"
+
+		        elif frames[i].at[j, "Team_Away"] in frames[i].at[j, "Bet_On"] or frames[i].at[j, "Team_Away"] in frames[i].at[j, "Bet_Type"]:
+		            frames[i].at[j, "Bet_On2"] = "Away"
+
+		        if "\n" in frames[i].at[j, "Bet_On"]:
+		            frames[i].at[j, "Bet_Spread"] = float(frames[i].at[j, "Bet_On"].split("\n")[-1])
+
+		        if "Moins de" in frames[i].at[j, "Bet_On"]:
+		            frames[i].at[j, "Bet_Spread"] *= -1
+
+		        if "Gagnant par" in frames[i].at[j, "Bet_On"] and not "+" in frames[i].at[j, "Bet_On"]:
+		            frames[i].at[j, "Bet_Spread"] = float(frames[i].at[j, "Bet_On"].split("par")[-1].split("point")[0].replace("s", ""))
+		    
+
+
+		# In[506]:
+
+
+		#Fix team names
+		for i in range(0, len(frames)):
+		    frames[i] = self.Fix_Team_Names(frames[i], "City")
+		    
+
+		#Check if the game has already started
+		for i in range(0, len(frames)):
+
+		    frames[i].loc[:, "Game_Time"] = frames[i]["Game_Time"].str.replace("EN DIRECT", "LIVE")  
+		    frames[i]["Game_Started"] = False
+		    
+		    if frames[i].at[0, "Game_Time"] == "LIVE":
+		        frames[i]["Game_Started"] = True
+
+		    elif frames[i].at[0, "Game_Time"].split(":")[0] < frames[i].at[0, "Scrapping_Time"].split(":")[0]: 
+
+		        frames[i]["Game_Started"] = True
+
+		    elif frames[i].at[0, "Game_Time"].split(":")[0] == frames[i].at[0, "Scrapping_Time"].split(":")[0]:
+		        if frames[i].at[0, "Game_Time"].split(":")[1] < frames[i].at[0, "Scrapping_Time"].split(":")[1]:
+
+		            frames[i]["Game_Started"] = True
+
+
+		# In[507]:
+
+
+		#Unlist frames
+		final_frame = pd.concat(frames, axis=0)
+
+		#Remove accents
+		final_frame.loc[:, "Bet_Type"] = final_frame["Bet_Type"].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+
+		#Remove spacing, i.e.: the "\n"
+		final_frame.loc[:, "Bet_On"] = final_frame["Bet_On"].str.replace("\n", " ")
+
+
+		# In[508]:
+
+
+		#save
+		folder_path = self.paths[3] + "/Predicted_Lineups/" + datetime.now().strftime("%d-%m-%Y")
+		if not os.path.exists(folder_path):
+		    
+		    print("Creating directory at:")
+		    print(folder_path)
+		    
+		    os.mkdir(folder_path)
+		    
+		print("Saving...")
+		self.update_file(folder_path, "Bets.csv", final_frame)
+
+		print("Done.")
+
+
+		# In[509]:
+
+
+		#obtain lineups
+		print("Obtaining lineups...")
 		date = datetime.strftime(datetime.now(), "%Y-%m-%d")
-		
-		url = "https://miseojeu.lotoquebec.com/fr/offre-de-paris/baseball/mlb/matchs?idAct=11"
 
-		headers = {
-		'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
-		}
+		lineups = self.Scrape_Historical_Predicted_Lineups_from_date(date)[0:2]
 
-		print("Accessing Loto-Quebec website...")
-
-		#Obtain page data
-		html = requests.get(url , stream = True, headers = headers).content
-		try:
-			tables = pd.read_html(html)
-			soup = BeautifulSoup(html)
-		except:
-			print("Error: No bets found   ----   Too early, or no games today.")
-
-		moneylines = [x for x in tables if len(x.columns) == 4]
-		moneylines = [x for x in moneylines if "Baseball  MLB" in x.iloc[0,1]]
+		#Fix team names
+		for i in range(0, len(lineups)):
+		    lineups[i] = self.Fix_Team_Names(lineups[i], "City")
 
 
-		#Remove bets on pitchers, homeruns, ect.
-		for i in range(0, len(moneylines)):
-			
-			moneylines[i].columns = ["A", "B", "C", "D"]
-			
-		moneylines = pd.concat(moneylines, axis = 0)
-		moneylines = moneylines.reset_index(drop = True)
-		moneylines = moneylines.astype(str)
-
-		keep = np.where(moneylines["A"] != "nan")[0]
-		moneylines = moneylines.loc[keep].reset_index(drop = True)
-
-		spreads = [i for i, x in enumerate(moneylines["B"]) if "pt(s)" in x]
-		win = list(range(0, spreads[0]))
-		totals = [i for i, x in enumerate(moneylines["B"]) if "Plus de" in x][0:(3 * len(win))]
-
-		spreads = moneylines.loc[spreads]
-		win = moneylines.loc[win]
-		totals = moneylines.loc[totals]
-
-		teams = win[["B", "C"]]
-
-		for i in range(0, len(teams)):
-			for j in range(0, 2):
-			
-				teams.iloc[i,j] = teams.iloc[i,j].split("MLB")[1].split("Num")[0]
-				teams.iloc[i,j] = "".join([x for x in teams.iloc[i,j] if not x.isdigit() and x != ","])
-				teams.iloc[i,j] = teams.iloc[i,j].strip()
-
-		win_away = win["B"].str.split("MLB", n = 1, expand = True).iloc[:, 1].str.split("Num", n = 1, expand = True).iloc[:, 0].str.strip().str.split("  ", n = 1, expand = True)
-		win_home = win["C"].str.split("MLB", n = 1, expand = True).iloc[:, 1].str.split("Num", n = 1, expand = True).iloc[:, 0].str.strip().str.split("  ", n = 1, expand = True)
+		# In[510]:
 
 
+		#Fix player names
+		print("Fixing player names...")
+
+		path_check = self.paths[0] + "/Clean_Data/FanGraphs_Box_Scores.csv"
+		if not os.path.exists(path_check):
+		    sys.exit("Missing file:" + "\t" + path_check)
+
+		batters = list(set(list(pd.read_csv(path_check)["Name"])))
+
+		path_check = self.paths[1] + "/Clean_Data/FanGraphs_Box_Scores.csv"
+		if not os.path.exists(path_check):
+		    sys.exit("Missing file:" + "\t" + path_check)
+
+		pitchers = list(set(list(pd.read_csv(path_check)["Name"])))	
+
+		bat = lineups[0]
+		pitch = lineups[1]
 
 
-		win_away.columns = ["Team_Away", "Factor_Away"]
-		win_home.columns = ["Team_Home", "Factor_Home"]
-		win_frame = pd.concat([win_away, win_home], axis = 1)
+		#Fix player names
+		for i in range(0, len(bat)):
+		    bat.at[i, "Name"] = self.find_name(str(bat.at[i, "Name"]), str(bat.at[i, "Team"]), batters)
+
+		    if i < len(pitch):		
+		        pitch.at[i, "Name"] = self.find_name(str(pitch.at[i, "Name"]), str(pitch.at[i, "Team"]), pitchers)
+
+		        
+		    
 
 
-		win_frame = self.Fix_Team_Names(win_frame, "City")
+		# In[511]:
 
 
-		spread_away = spreads["B"].str.split("MLB", n = 1, expand = True).iloc[:, 1].str.split("Num", n = 1, expand = True).iloc[:, 0].str.strip()
-		spread_home = spreads["C"].str.split("MLB", n = 1, expand = True).iloc[:, 1].str.split("Num", n = 1, expand = True).iloc[:, 0].str.strip()
+		#Save the lineups
+		print("Saving lineups...")
 
-		all_spreads = [pd.DataFrame(spread_home), pd.DataFrame(spread_away)]
+		self.update_file(folder_path, "Bat.csv", bat)
+		self.update_file(folder_path, "Pitch.csv", pitch)
 
-		k = 0
-
-		for frame in all_spreads:
-			
-			t = []
-			s = []
-			f = []
-			
-			for i in range(0, len(frame)):
-				t.append("".join([x for x in frame.iloc[i,0].split("pt(s)")[0] if not x.isdigit() and x not in ["-", "+", ","]]).strip())
-				s.append(float(frame.iloc[i,0].split("pt(s)")[0].strip().split(" ")[-1].replace(",", ".")))
-				f.append(float(frame.iloc[i,0].split("pt(s)")[-1].strip().replace(",", ".")))
-
-			t = pd.DataFrame(t)
-			s = pd.DataFrame(s)
-			f = pd.DataFrame(f)
-
-			all_spreads[k] = pd.concat([t,s,f], axis = 1)
-			if k == 0:
-				all_spreads[k].columns = ["Team_Home", "Spread_Home", "Factor_Home"]
-			else:
-				all_spreads[k].columns = ["Team_Away", "Spread_Away", "Factor_Away"]
-			
-			k += 1
-
-
-		all_spreads = pd.concat(all_spreads, axis = 1)
-		all_spreads.loc[:, "Team_Away"] = list(teams["B"]) + list(teams["B"])
-		all_spreads.loc[:, "Team_Home"] = list(teams["C"]) + list(teams["C"])
-			
-		all_spreads = self.Fix_Team_Names(all_spreads, "City")
-
-		totals_over = totals["B"].str.split("de ", expand = True).iloc[:, 1].str.split("Num", expand = True).iloc[:, 0].str.strip().str.split("  ", expand = True)
-		totals_under = totals["C"].str.split("de ", expand = True).iloc[:, 1].str.split("Num", expand = True).iloc[:, 0].str.strip().str.split("  ", expand = True)
-
-		totals = pd.concat([totals_over, totals_under], axis = 1)
-
-		temp = frame.iloc[i,0].split("pt(s)")[0].strip().split(" ")
-
-		totals.columns = ["Over", "Factor_Over", "Under", "Factor_Under"]
-
-		totals["Team_Home"] = "-"
-		totals["Team_Away"] = "-"
-
-		totals = totals.reset_index(drop = True)
-
-		for i in range(0, len(win_frame)):
-			totals.loc[i, "Team_Home"] = teams.loc[i, "C"]
-			totals.loc[i, "Team_Away"] = teams.loc[i, "B"]
-
-			totals.loc[2*i + len(win_frame), "Team_Home"] = teams.loc[i, "C"]
-			totals.loc[2*i + len(win_frame), "Team_Away"] = teams.loc[i, "B"]  
-
-			totals.loc[2*i + len(win_frame) + 1, "Team_Home"] = teams.loc[i, "C"]
-			totals.loc[2*i + len(win_frame) + 1, "Team_Away"] = teams.loc[i, "B"]
-
-
-		totals = self.Fix_Team_Names(totals, "City")    
-		win_frame["Date"] = date
-		totals["Date"] = date
-		all_spreads["Date"] = date
-
-		win_frame.loc[:,"Factor_Away"] = win_frame.loc[:,"Factor_Away"].str.replace(",",".").astype(float)
-		win_frame.loc[:,"Factor_Home"] = win_frame.loc[:,"Factor_Home"].str.replace(",",".").astype(float)
-
-		totals.loc[:,"Factor_Over"] = totals.loc[:,"Factor_Over"].str.replace(",",".").astype(float)
-		totals.loc[:,"Factor_Under"] = totals.loc[:,"Factor_Under"].str.replace(",",".").astype(float)
-		totals.loc[:,"Over"] = totals.loc[:,"Over"].str.replace(",",".").astype(float)
-		totals.loc[:,"Under"] = totals.loc[:,"Under"].str.replace(",",".").astype(float)
-
-
-		self.update_file(self.paths[3] + "/Predicted_Lineups", "LotoQc_ML.csv", win_frame)
-		self.update_file(self.paths[3] + "/Predicted_Lineups", "LotoQc_OU.csv", totals)
-		self.update_file(self.paths[3] + "/Predicted_Lineups", "LotoQc_SP.csv", all_spreads)
-
+		print("Done (final).")
 
 
 
