@@ -1464,8 +1464,6 @@ class Baseball_Scrapper:
 		frames = []
 
 		print("Retrieving avaible bets...")
-		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
-		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
 		to_remove = []
 		k = 0
