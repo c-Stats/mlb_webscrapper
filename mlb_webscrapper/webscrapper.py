@@ -60,6 +60,8 @@ class Baseball_Scrapper:
 		else:
 			self.dictio = []
 
+		self.chrome_webdriver_path = os.getcwd()
+
 
 		print("Scapper succesfully initiated.")
 
@@ -1129,7 +1131,7 @@ class Baseball_Scrapper:
 
 		url = "https://rotogrinders.com/lineups/mlb?date=" + date + "&site=draftkings"
 		html = requests.get(url).content
-		soup = BeautifulSoup(html)
+		soup = BeautifulSoup(html, features="lxml")
 
 		tables = soup.find_all("div", {"class" : "lineup-content"})
 		teams = [x.text for x in soup.find_all("span", {"class" : "shrt"})]
