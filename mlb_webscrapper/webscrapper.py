@@ -1614,7 +1614,7 @@ class Baseball_Scrapper:
 		    
 		    refs = []
 		    
-		    for j in range(0, len(refs_and_team)):
+		    for j in range(0, len(refs_and_teams)):
 		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
 
 		        
@@ -1810,14 +1810,6 @@ class Baseball_Scrapper:
 		print("Done (final).")
 
 
-		# In[686]:
-
-
-		frames = []
-
-		print("Retrieving avaible bets...")
-		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
-		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
 
 
