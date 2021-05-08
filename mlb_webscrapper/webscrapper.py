@@ -1411,7 +1411,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[498]:
+		# In[665]:
 
 
 		#expand the match list
@@ -1427,14 +1427,14 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[499]:
+		# In[666]:
 
 
 		#html containers with the links to every match
 		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[500]:
+		# In[667]:
 
 
 		#get the time at which the matches are played
@@ -1447,7 +1447,7 @@ class Baseball_Scrapper:
 		    times.append(match_time.replace("Aujourd'hui ", ""))
 
 
-		# In[501]:
+		# In[668]:
 
 
 		#get the urls for the individual match webpages
@@ -1456,7 +1456,7 @@ class Baseball_Scrapper:
 		    match_urls.append(containers.find_element_by_class_name("event-list__item-link-anchor").get_attribute("href"))
 
 
-		# In[502]:
+		# In[669]:
 
 
 		#process all pages
@@ -1464,9 +1464,11 @@ class Baseball_Scrapper:
 		frames = []
 
 		print("Retrieving avaible bets...")
-		estimated_w_time = round((20.0 * len(frames)) / 60)
-		print("Estimated processing time: " + estimated_w_time + "min(s)")
+		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
+		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
+		to_remove = []
+		k = 0
 		for url in tqdm.tqdm(match_urls):
 		    
 		    driver.get(url)
@@ -1474,34 +1476,53 @@ class Baseball_Scrapper:
 		    #html containers with offered returns
 		    bet_containers = driver.find_elements_by_class_name("event-panel")
 		    
-		    #wait for the page to load
+		    #Wait for the page to load
+		    n_loads = 0
+		    skip = False
 		    while len(bet_containers) == 0:
 		        time.sleep(1)
+		        n_loads += 1
 		        bet_containers = driver.find_elements_by_class_name("event-panel")
 		        
+		        if n_loads == 10:
+		            skip = True
+		            print("Skipping unavaible event.")
+		            print("URL: " + url)
+		            break
+		            
+		    if skip:
+		        to_remove.append(k)
+		        continue
 
 		    bet_frames = []
 
 		    #extract team names, rates and bet type
 		    for containers in bet_containers:
 
-		        #Extract bets offered
-		        offers = containers.find_elements_by_class_name("market__body_col")
-		        rows = []
+		        try:
+		            #Extract bets offered
+		            offers = containers.find_elements_by_class_name("market__body_col")
+		            rows = []
 
-		        bet_type = containers.find_element_by_class_name("event-panel__heading").text
+		            bet_type = containers.find_element_by_class_name("event-panel__heading").text
 
-		        for x in offers:
+		            for x in offers:
 
-		            x_separated = x.text.rsplit("\n", 1)  
-		            rows.append([bet_type, x_separated[0], x_separated[1]])
+		                x_separated = x.text.rsplit("\n", 1)  
+		                if len(x_separated) == 1:
+		                    continue           
 
-		        #Merge to main frame
-		        to_append = pd.DataFrame(rows, columns = ["Bet_Type", "Bet_On", "Factor"])
-		        if len(bet_frames) == 0:
-		            bet_frames = to_append
-		        else:
-		            bet_frames = bet_frames.append(to_append, ignore_index = True)
+		                rows.append([bet_type, x_separated[0], x_separated[1]])
+
+		            #Merge to main frame
+		            to_append = pd.DataFrame(rows, columns = ["Bet_Type", "Bet_On", "Factor"])
+		            if len(bet_frames) == 0:
+		                bet_frames = to_append
+		            else:
+		                bet_frames = bet_frames.append(to_append, ignore_index = True)
+		        
+		        except:
+		            continue
 		    
 		   #Expand menu
 		    expand_links = driver.find_elements_by_class_name("event-panel__heading__market-name")
@@ -1521,37 +1542,52 @@ class Baseball_Scrapper:
 		    #extract team names, rates and bet type
 		    for containers in bet_containers:
 
-		        #Extract bets offered
-		        offers = containers.find_elements_by_class_name("market__body_col")
-		        rows = []
+		        try:
+		            #Extract bets offered
+		            offers = containers.find_elements_by_class_name("market__body_col")
+		            rows = []
 
-		        bet_type = containers.find_element_by_class_name("event-panel__heading").text
+		            bet_type = containers.find_element_by_class_name("event-panel__heading").text
 
-		        for x in offers:
+		            for x in offers:
 
-		            x_separated = x.text.rsplit("\n", 1)  
-		            if len(x_separated) == 1:
-		                continue
+		                x_separated = x.text.rsplit("\n", 1)  
+		                if len(x_separated) == 1:
+		                    continue
 
-		            rows.append([bet_type, x_separated[0], x_separated[1]])
+		                rows.append([bet_type, x_separated[0], x_separated[1]])
 
-		        #Merge to main frame
-		        to_append = pd.DataFrame(rows, columns = ["Bet_Type", "Bet_On", "Factor"])
-		        if len(bet_frames) == 0:
-		            bet_frames = to_append
-		        else:
-		            bet_frames = bet_frames.append(to_append, ignore_index = True)   
+		            #Merge to main frame
+		            to_append = pd.DataFrame(rows, columns = ["Bet_Type", "Bet_On", "Factor"])
+		            if len(bet_frames) == 0:
+		                bet_frames = to_append
+		            else:
+		                bet_frames = bet_frames.append(to_append, ignore_index = True)   
+		        
+		        except:
+		            continue
 		            
 		    
 		    #Add the date and time
-		    bet_frames["Date"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+		    bet_frames["Scrapping_Time"] = datetime.now().replace(second = 0, microsecond = 0)
 		    
 		    frames.append(bet_frames)
 		    
 		    
 
 
-		# In[503]:
+		# In[670]:
+
+
+		#Remove unprocessed data urls and gametimes
+
+		if len(to_remove) > 0:
+		    
+		    to_remove.reverse()
+		    for i in to_remove:
+		        
+		        del times[i]
+		        del match_urls[i]
 
 
 		#Process the match 
@@ -1569,35 +1605,36 @@ class Baseball_Scrapper:
 		    for j in range(0, len(refs_and_team)):
 		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
 
-		    if "h" in times[i] or "m" in times[i]:
+		        
+		    gametime = np.NaN
+		    
+		    if "Demain" in times[i]:
+
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() + timedelta(days = 1)
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+		    
+		    elif "h" in times[i] or "m" in times[i]:
+
 		        h = 0
-		    if "h" in times[i]:
-		        h += int(times[i].split("h")[0])
-
-		    m = 0
-		    if "m" in times[i]:
-		        mins = times[i].split("m")[0] 
-
-		        if "h" in mins:
-		            m += int(mins.split("h")[-1])
-		        else:
-		            m += int(mins)  
 		            
-		        gametime = datetime.strptime(frames[i].at[0, "Date"], "%d/%m/%Y %H:%M:%S")
-		        gametime += timedelta(hours = h, minutes = m)
-		        gametime = gametime.strftime("%d/%m/%Y %H:%M:%S").split(" ")[-1].rsplit(":", 1)[0]
+		        if "h" in times[i]:
+		            h += int(times[i].split("h")[0])
 
-		    else:
+		        m = 0
+		        if "m" in times[i]:
+		            mins = times[i].split("m")[0] 
 
-		        gametime = times[i]
+		            if "h" in mins:
+		                m += int(mins.split("h")[-1])
+		            else:
+		                m += int(mins)  
+
+		            gametime = frames[i].at[0, "Scrapping_Time"]
+		            gametime += timedelta(hours = h, minutes = m)
 
 
 		    frames[i]["Game_Time"] = gametime
-		    
-		    frames[i].loc[:, "Scrapping_Time"] = frames[i]["Date"].str.split(" ", expand = True).iloc[:, 1]
-		    frames[i].loc[:, "Scrapping_Time"] = frames[i]["Scrapping_Time"].str.rsplit(":", 1, expand = True).iloc[:, 0]
-		    
-		    frames[i].loc[:, "Date"] = frames[i]["Date"].str.split(" ", expand = True).iloc[:, 0]
 		    
 		    frames[i]["Team_Home"] = teams[-1]
 		    frames[i]["Team_Away"] = teams[0]
@@ -1612,7 +1649,7 @@ class Baseball_Scrapper:
 		            
 
 
-		# In[504]:
+		# In[671]:
 
 
 		print("Done.")
@@ -1620,7 +1657,7 @@ class Baseball_Scrapper:
 		driver.quit()
 
 
-		# In[505]:
+		# In[672]:
 
 
 		#More data cleaning
@@ -1652,7 +1689,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[506]:
+		# In[673]:
 
 
 		#Fix team names
@@ -1663,27 +1700,19 @@ class Baseball_Scrapper:
 		#Check if the game has already started
 		for i in range(0, len(frames)):
 
-		    frames[i].loc[:, "Game_Time"] = frames[i]["Game_Time"].str.replace("EN DIRECT", "LIVE")  
-		    frames[i]["Game_Started"] = False
-		    
-		    if frames[i].at[0, "Game_Time"] == "LIVE":
+		    if str(type(frames[i].at[0, "Game_Time"])) == "<class 'pandas._libs.tslibs.timestamps.Timestamp'>":
+		        frames[i]["Game_Started"] = False
+		        frames[i]["Game_Starts_In"] = frames[i]["Game_Time"] - frames[i]["Scrapping_Time"]
+		    else:
 		        frames[i]["Game_Started"] = True
-
-		    elif frames[i].at[0, "Game_Time"].split(":")[0] < frames[i].at[0, "Scrapping_Time"].split(":")[0]: 
-
-		        frames[i]["Game_Started"] = True
-
-		    elif frames[i].at[0, "Game_Time"].split(":")[0] == frames[i].at[0, "Scrapping_Time"].split(":")[0]:
-		        if frames[i].at[0, "Game_Time"].split(":")[1] < frames[i].at[0, "Scrapping_Time"].split(":")[1]:
-
-		            frames[i]["Game_Started"] = True
+		        frames[i]["Game_Starts_In"] = timedelta(days = 0)
 
 
-		# In[507]:
+		# In[674]:
 
 
 		#Unlist frames
-		final_frame = pd.concat(frames, axis=0)
+		final_frame = pd.concat(frames, axis = 0, ignore_index = True)
 
 		#Remove accents
 		final_frame.loc[:, "Bet_Type"] = final_frame["Bet_Type"].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
@@ -1692,7 +1721,7 @@ class Baseball_Scrapper:
 		final_frame.loc[:, "Bet_On"] = final_frame["Bet_On"].str.replace("\n", " ")
 
 
-		# In[508]:
+		# In[675]:
 
 
 		#save
@@ -1710,7 +1739,7 @@ class Baseball_Scrapper:
 		print("Done.")
 
 
-		# In[509]:
+		# In[676]:
 
 
 		#obtain lineups
@@ -1724,7 +1753,7 @@ class Baseball_Scrapper:
 		    lineups[i] = self.Fix_Team_Names(lineups[i], "City")
 
 
-		# In[510]:
+		# In[677]:
 
 
 		#Fix player names
@@ -1757,7 +1786,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[511]:
+		# In[678]:
 
 
 		#Save the lineups
@@ -1767,6 +1796,12 @@ class Baseball_Scrapper:
 		self.update_file(folder_path, "Pitch.csv", pitch)
 
 		print("Done (final).")
+
+
+
+
+
+
 
 
 
