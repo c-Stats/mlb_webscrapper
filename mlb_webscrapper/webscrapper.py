@@ -1402,7 +1402,19 @@ class Baseball_Scrapper:
 	##############################################################################
 
 
-	def Scrape_Bets(self, driver):
+	def Scrape_Bets(self):
+
+		try:
+		    driver = webdriver.Chrome()
+		except:
+		    print("Error: please install the proper Chrome webdriver at:")
+		    print(os.getcwd())
+		    
+		    #return 0
+
+
+		# In[681]:
+
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
 		time.sleep(1.5)
@@ -1411,7 +1423,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[665]:
+		# In[682]:
 
 
 		#expand the match list
@@ -1427,14 +1439,14 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[666]:
+		# In[683]:
 
 
 		#html containers with the links to every match
 		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[667]:
+		# In[684]:
 
 
 		#get the time at which the matches are played
@@ -1447,7 +1459,7 @@ class Baseball_Scrapper:
 		    times.append(match_time.replace("Aujourd'hui ", ""))
 
 
-		# In[668]:
+		# In[685]:
 
 
 		#get the urls for the individual match webpages
@@ -1464,10 +1476,12 @@ class Baseball_Scrapper:
 		frames = []
 
 		print("Retrieving avaible bets...")
+		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
+		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
 		to_remove = []
 		k = 0
-		for url in tqdm.tqdm(match_urls):
+		for url in tqdm(match_urls):
 		    
 		    driver.get(url)
 		    
@@ -1795,6 +1809,15 @@ class Baseball_Scrapper:
 
 		print("Done (final).")
 
+
+		# In[686]:
+
+
+		frames = []
+
+		print("Retrieving avaible bets...")
+		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
+		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
 
 
