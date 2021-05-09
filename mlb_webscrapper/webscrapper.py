@@ -1628,9 +1628,9 @@ class Baseball_Scrapper:
 
 		    elif "Aujourd'hui" in times[i]:
 
-		        today_time = times[i].split(" ")[-1].split(":")
-				gametime = datetime.now() + timedelta(days = 1)
-				gametime = gametime.replace(hour = int(today_time[0]), minute = int(today_time[1]), second = 0, microsecond = 0)
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() 
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
 
 		    
 		    elif "h" in times[i] or "m" in times[i]:
