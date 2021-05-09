@@ -1404,6 +1404,7 @@ class Baseball_Scrapper:
 
 	def Scrape_Bets(self):
 
+
 		try:
 		    driver = webdriver.Chrome()
 		except:
@@ -1413,7 +1414,7 @@ class Baseball_Scrapper:
 		    #return 0
 
 
-		# In[18]:
+		# In[29]:
 
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
@@ -1423,7 +1424,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[19]:
+		# In[30]:
 
 
 		#expand the match list
@@ -1439,14 +1440,14 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[20]:
+		# In[31]:
 
 
 		#html containers with the links to every match
 		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[21]:
+		# In[32]:
 
 
 		#get the time at which the matches are played
@@ -1459,7 +1460,7 @@ class Baseball_Scrapper:
 		    times.append(match_time.replace("Aujourd'hui ", ""))
 
 
-		# In[11]:
+		# In[33]:
 
 
 		#get the urls for the individual match webpages
@@ -1468,7 +1469,7 @@ class Baseball_Scrapper:
 		    match_urls.append(containers.find_element_by_class_name("event-list__item-link-anchor").get_attribute("href"))
 
 
-		# In[12]:
+		# In[34]:
 
 
 		#process all pages
@@ -1588,7 +1589,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[670]:
+		# In[37]:
 
 
 		#Remove unprocessed data urls and gametimes
@@ -1605,6 +1606,20 @@ class Baseball_Scrapper:
 		#Process the match 
 		#I.e.: clean some stuff
 		for i in range(0, len(times)):
+		    
+		    refs_and_teams = match_urls[i].rsplit("/", 1)[-1].split("--")
+		    
+		    teams = list(frames[i].loc[np.where(frames[0]["Bet_Type"] == "GAGNANT À 2 ISSUES")[0]]["Bet_On"])
+		    teams = [x.replace("(", "").replace(")", "") for x in teams]
+		    teams = [x.replace("Philadelphie", "Philadelphia") for x in teams]
+		    
+		    refs = []
+		    
+		    for j in range(0, len(refs_and_teams)):
+		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
+
+		        
+		    gametime = np.NaN
 		            
 		    gametime = np.NaN
 		    
@@ -1641,7 +1656,7 @@ class Baseball_Scrapper:
 		            gametime += timedelta(hours = h, minutes = m)
 		            gametime = gametime.replace(second = 0, microsecond = 0) 
 		    
-		    else:
+		    elif not "DIRECT" in times[i]:
 		        
 		        tmrw_time = times[i].split(" ")[-1].split(":")
 		        gametime = datetime.now() 
@@ -1663,7 +1678,7 @@ class Baseball_Scrapper:
 		            
 
 
-		# In[671]:
+		# In[40]:
 
 
 		print("Done.")
@@ -1671,7 +1686,7 @@ class Baseball_Scrapper:
 		driver.quit()
 
 
-		# In[672]:
+		# In[41]:
 
 
 		#More data cleaning
@@ -1703,7 +1718,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[673]:
+		# In[42]:
 
 
 		#Fix team names
@@ -1722,7 +1737,7 @@ class Baseball_Scrapper:
 		        frames[i]["Game_Starts_In"] = timedelta(days = 0)
 
 
-		# In[674]:
+		# In[43]:
 
 
 		#Unlist frames
@@ -1735,7 +1750,7 @@ class Baseball_Scrapper:
 		final_frame.loc[:, "Bet_On"] = final_frame["Bet_On"].str.replace("\n", " ")
 
 
-		# In[675]:
+		# In[44]:
 
 
 		#save
@@ -1753,7 +1768,7 @@ class Baseball_Scrapper:
 		print("Done.")
 
 
-		# In[676]:
+		# In[45]:
 
 
 		#obtain lineups
@@ -1767,7 +1782,7 @@ class Baseball_Scrapper:
 		    lineups[i] = self.Fix_Team_Names(lineups[i], "City")
 
 
-		# In[677]:
+		# In[46]:
 
 
 		#Fix player names
@@ -1800,7 +1815,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[678]:
+		# In[47]:
 
 
 		#Save the lineups
@@ -1810,17 +1825,6 @@ class Baseball_Scrapper:
 		self.update_file(folder_path, "Pitch.csv", pitch)
 
 		print("Done (final).")
-
-
-		# In[686]:
-
-
-		frames = []
-
-		print("Retrieving avaible bets...")
-		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
-		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
-
 
 
 
