@@ -1404,6 +1404,8 @@ class Baseball_Scrapper:
 
 	def Scrape_Bets(self):
 
+
+
 		try:
 		    driver = webdriver.Chrome()
 		except:
@@ -1413,7 +1415,7 @@ class Baseball_Scrapper:
 		    #return 0
 
 
-		# In[3]:
+		# In[11]:
 
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
@@ -1427,16 +1429,20 @@ class Baseball_Scrapper:
 
 
 		#expand the match list
-		more_matches = driver.find_element_by_class_name("content-loader__load-more-link")
-		if str(type(more_matches)) == "<class 'selenium.webdriver.remote.webelement.WebElement'>":
-		    more_matches.click()
-		    
-		    matches_containers = driver.find_elements_by_class_name("event-list__item-link")
-		    
-		    #Keep loading until the new matches pop up
-		    while len(matches_containers) == n_avb:
-		        time.sleep(1)
+		try:
+		    more_matches = driver.find_element_by_class_name("content-loader__load-more-link")
+		    if str(type(more_matches)) == "<class 'selenium.webdriver.remote.webelement.WebElement'>":
+		        more_matches.click()
+
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
+
+		        #Keep loading until the new matches pop up
+		        while len(matches_containers) == n_avb:
+		            time.sleep(1)
+		            matches_containers = driver.find_elements_by_class_name("event-list__item-link")
+
+		except:
+		    pass
 
 
 		# In[5]:
@@ -1826,5 +1832,7 @@ class Baseball_Scrapper:
 		self.update_file(folder_path, "Pitch.csv", pitch)
 
 		print("Done (final).")
+
+
 
 
