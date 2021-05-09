@@ -1614,7 +1614,7 @@ class Baseball_Scrapper:
 		    
 		    refs = []
 		    
-		    for j in range(0, len(refs_and_team)):
+		    for j in range(0, len(refs_and_teams)):
 		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
 
 		        
