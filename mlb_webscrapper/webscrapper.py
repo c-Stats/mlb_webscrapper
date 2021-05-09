@@ -1410,10 +1410,10 @@ class Baseball_Scrapper:
 		    print("Error: please install the proper Chrome webdriver at:")
 		    print(os.getcwd())
 		    
-		    #return 0
+		    return 0
 
 
-		# In[681]:
+		# In[ ]:
 
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
@@ -1423,7 +1423,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[682]:
+		# In[2]:
 
 
 		#expand the match list
@@ -1439,7 +1439,7 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[683]:
+		# In[3]:
 
 
 		#html containers with the links to every match
@@ -1481,7 +1481,7 @@ class Baseball_Scrapper:
 
 		to_remove = []
 		k = 0
-		for url in tqdm(match_urls):
+		for url in tqdm.tqdm(match_urls):
 		    
 		    driver.get(url)
 		    
@@ -1614,7 +1614,7 @@ class Baseball_Scrapper:
 		    
 		    refs = []
 		    
-		    for j in range(0, len(refs_and_teams)):
+		    for j in range(0, len(refs_and_team)):
 		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
 
 		        
@@ -1625,13 +1625,13 @@ class Baseball_Scrapper:
 		        tmrw_time = times[i].split(" ")[-1].split(":")
 		        gametime = datetime.now() + timedelta(days = 1)
 		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-
+		        
 		    elif "Aujourd'hui" in times[i]:
 
 		        tmrw_time = times[i].split(" ")[-1].split(":")
 		        gametime = datetime.now() 
 		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-
+		                
 		    
 		    elif "h" in times[i] or "m" in times[i]:
 
@@ -1817,11 +1817,14 @@ class Baseball_Scrapper:
 		print("Done (final).")
 
 
+		# In[686]:
 
 
+		frames = []
 
-
-
+		print("Retrieving avaible bets...")
+		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
+		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
 
 
