@@ -1481,7 +1481,7 @@ class Baseball_Scrapper:
 
 		to_remove = []
 		k = 0
-		for url in tqdm.tqdm(match_urls):
+		for url in tqdm(match_urls):
 		    
 		    driver.get(url)
 		    
