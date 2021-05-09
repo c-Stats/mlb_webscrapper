@@ -1410,10 +1410,10 @@ class Baseball_Scrapper:
 		    print("Error: please install the proper Chrome webdriver at:")
 		    print(os.getcwd())
 		    
-		    return 0
+		    #return 0
 
 
-		# In[ ]:
+		# In[18]:
 
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
@@ -1423,7 +1423,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[2]:
+		# In[19]:
 
 
 		#expand the match list
@@ -1439,14 +1439,14 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[3]:
+		# In[20]:
 
 
 		#html containers with the links to every match
 		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[684]:
+		# In[21]:
 
 
 		#get the time at which the matches are played
@@ -1459,7 +1459,7 @@ class Baseball_Scrapper:
 		    times.append(match_time.replace("Aujourd'hui ", ""))
 
 
-		# In[685]:
+		# In[11]:
 
 
 		#get the urls for the individual match webpages
@@ -1468,7 +1468,7 @@ class Baseball_Scrapper:
 		    match_urls.append(containers.find_element_by_class_name("event-list__item-link-anchor").get_attribute("href"))
 
 
-		# In[669]:
+		# In[12]:
 
 
 		#process all pages
@@ -1604,20 +1604,8 @@ class Baseball_Scrapper:
 
 		#Process the match 
 		#I.e.: clean some stuff
-		for i in range(0, len(frames)):
-		    
-		    refs_and_teams = match_urls[i].rsplit("/", 1)[-1].split("--")
-		    
-		    teams = list(frames[i].loc[np.where(frames[0]["Bet_Type"] == "GAGNANT À 2 ISSUES")[0]]["Bet_On"])
-		    teams = [x.replace("(", "").replace(")", "") for x in teams]
-		    teams = [x.replace("Philadelphie", "Philadelphia") for x in teams]
-		    
-		    refs = []
-		    
-		    for j in range(0, len(refs_and_teams)):
-		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
-
-		        
+		for i in range(0, len(times)):
+		            
 		    gametime = np.NaN
 		    
 		    if "Demain" in times[i]:
@@ -1649,8 +1637,15 @@ class Baseball_Scrapper:
 		            else:
 		                m += int(mins)  
 
-		            gametime = frames[i].at[0, "Scrapping_Time"]
+		            gametime = datetime.now()
 		            gametime += timedelta(hours = h, minutes = m)
+		            gametime = gametime.replace(second = 0, microsecond = 0) 
+		    
+		    else:
+		        
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() 
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
 
 
 		    frames[i]["Game_Time"] = gametime
@@ -1825,6 +1820,8 @@ class Baseball_Scrapper:
 		print("Retrieving avaible bets...")
 		estimated_w_time = round((20.0 * len(matches_containers)) / 60)
 		print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
+
+
 
 
 
