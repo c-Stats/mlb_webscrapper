@@ -1413,7 +1413,7 @@ class Baseball_Scrapper:
 		    #return 0
 
 
-		# In[28]:
+		# In[3]:
 
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
@@ -1423,7 +1423,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[29]:
+		# In[4]:
 
 
 		#expand the match list
@@ -1439,14 +1439,14 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[30]:
+		# In[5]:
 
 
 		#html containers with the links to every match
 		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[31]:
+		# In[6]:
 
 
 		#get the time at which the matches are played
@@ -1462,9 +1462,22 @@ class Baseball_Scrapper:
 		#Process the game times
 		for i in range(0, len(times)):
 		    
-		    gametime = np.NaN
-		    
-		    if "s" in times[i] or "m" in times[i] or "h" in times[i]:
+		    gametime = np.NaN   
+
+		    if "Demain" in times[i]:
+
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() + timedelta(days = 1)
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+
+
+		    elif "Aujourd'hui" in times[i]:
+
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() 
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+		        
+		    elif "s" in times[i] or "m" in times[i] or "h" in times[i]:
 
 		        vals = times[i].split(" ")
 		        h = 0
@@ -1483,20 +1496,8 @@ class Baseball_Scrapper:
 
 		        gametime = datetime.now()
 		        gametime += timedelta(hours = h, minutes = m)
-		        gametime = gametime.replace(second = 0, microsecond = 0)    
-
-		    elif "Demain" in times[i]:
-
-		        tmrw_time = times[i].split(" ")[-1].split(":")
-		        gametime = datetime.now() + timedelta(days = 1)
-		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-
-
-		    elif "Aujourd'hui" in times[i]:
-
-		        tmrw_time = times[i].split(" ")[-1].split(":")
-		        gametime = datetime.now() 
-		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0)     
+		        gametime = gametime.replace(second = 0, microsecond = 0)         
+		        
 
 		    elif ":" in times[i]:
 
@@ -1825,7 +1826,5 @@ class Baseball_Scrapper:
 		self.update_file(folder_path, "Pitch.csv", pitch)
 
 		print("Done (final).")
-
-
 
 
