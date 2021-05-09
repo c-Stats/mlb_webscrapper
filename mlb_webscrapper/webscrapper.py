@@ -1404,7 +1404,6 @@ class Baseball_Scrapper:
 
 	def Scrape_Bets(self):
 
-
 		try:
 		    driver = webdriver.Chrome()
 		except:
@@ -1414,7 +1413,7 @@ class Baseball_Scrapper:
 		    #return 0
 
 
-		# In[29]:
+		# In[28]:
 
 
 		driver.get("https://miseojeuplus.espacejeux.com/sports/sports/competition/597/matches")
@@ -1424,7 +1423,7 @@ class Baseball_Scrapper:
 		n_avb = len(matches_containers)
 
 
-		# In[30]:
+		# In[29]:
 
 
 		#expand the match list
@@ -1440,14 +1439,14 @@ class Baseball_Scrapper:
 		        matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[31]:
+		# In[30]:
 
 
 		#html containers with the links to every match
 		matches_containers = driver.find_elements_by_class_name("event-list__item-link")
 
 
-		# In[32]:
+		# In[31]:
 
 
 		#get the time at which the matches are played
@@ -1459,8 +1458,56 @@ class Baseball_Scrapper:
 		    match_time = div_item.get_attribute("innerHTML").split("</span>")[1].split(">")[-1].strip()
 		    times.append(match_time.replace("Aujourd'hui ", ""))
 
+		    
+		#Process the game times
+		for i in range(0, len(times)):
+		    
+		    gametime = np.NaN
+		    
+		    if "s" in times[i] or "m" in times[i] or "h" in times[i]:
 
-		# In[33]:
+		        vals = times[i].split(" ")
+		        h = 0
+		        m = 0
+
+		        for x in vals:
+
+		            if "h" in x:
+		                h += int(x.replace("h", ""))
+
+		            elif "m" in x:
+		                m += int(x.replace("m", ""))
+
+		            elif "s" in x:
+		                m += round(float(x.replace("s", "")) / 60.0)
+
+		        gametime = datetime.now()
+		        gametime += timedelta(hours = h, minutes = m)
+		        gametime = gametime.replace(second = 0, microsecond = 0)    
+
+		    elif "Demain" in times[i]:
+
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() + timedelta(days = 1)
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+
+
+		    elif "Aujourd'hui" in times[i]:
+
+		        tmrw_time = times[i].split(" ")[-1].split(":")
+		        gametime = datetime.now() 
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0)     
+
+		    elif ":" in times[i]:
+
+		        tmrw_time = times[i].split(":")
+		        gametime = datetime.now() 
+		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+		    
+		    times[i] = gametime
+
+
+		# In[32]:
 
 
 		#get the urls for the individual match webpages
@@ -1469,7 +1516,7 @@ class Baseball_Scrapper:
 		    match_urls.append(containers.find_element_by_class_name("event-list__item-link-anchor").get_attribute("href"))
 
 
-		# In[34]:
+		# In[33]:
 
 
 		#process all pages
@@ -1589,7 +1636,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[37]:
+		# In[34]:
 
 
 		#Remove unprocessed data urls and gametimes
@@ -1603,8 +1650,7 @@ class Baseball_Scrapper:
 		        del match_urls[i]
 
 
-		#Process the match 
-		#I.e.: clean some stuff
+		#Add referee names, game time and home/away team indicators
 		for i in range(0, len(times)):
 		    
 		    refs_and_teams = match_urls[i].rsplit("/", 1)[-1].split("--")
@@ -1616,54 +1662,10 @@ class Baseball_Scrapper:
 		    refs = []
 		    
 		    for j in range(0, len(refs_and_teams)):
-		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:]))
-
-		        
-		    gametime = np.NaN
-		            
-		    gametime = np.NaN
-		    
-		    if "Demain" in times[i]:
-
-		        tmrw_time = times[i].split(" ")[-1].split(":")
-		        gametime = datetime.now() + timedelta(days = 1)
-		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-		        
-		    elif "Aujourd'hui" in times[i]:
-
-		        tmrw_time = times[i].split(" ")[-1].split(":")
-		        gametime = datetime.now() 
-		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-		                
-		    
-		    elif "h" in times[i] or "m" in times[i]:
-
-		        h = 0
-		            
-		        if "h" in times[i]:
-		            h += int(times[i].split("h")[0])
-
-		        m = 0
-		        if "m" in times[i]:
-		            mins = times[i].split("m")[0] 
-
-		            if "h" in mins:
-		                m += int(mins.split("h")[-1])
-		            else:
-		                m += int(mins)  
-
-		            gametime = datetime.now()
-		            gametime += timedelta(hours = h, minutes = m)
-		            gametime = gametime.replace(second = 0, microsecond = 0) 
-		    
-		    elif not "DIRECT" in times[i]:
-		        
-		        tmrw_time = times[i].split(" ")[-1].split(":")
-		        gametime = datetime.now() 
-		        gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+		        refs.append("".join(refs_and_teams[j].rsplit("-", 2)[1:])) 
 
 
-		    frames[i]["Game_Time"] = gametime
+		    frames[i]["Game_Time"] = times[i]
 		    
 		    frames[i]["Team_Home"] = teams[-1]
 		    frames[i]["Team_Away"] = teams[0]
@@ -1673,12 +1675,10 @@ class Baseball_Scrapper:
 		    
 		    frames[i].loc[:, "Factor"] = pd.to_numeric(frames[i]["Factor"].str.replace(",", "."))
 		    
-		    
-
-		            
+		              
 
 
-		# In[40]:
+		# In[35]:
 
 
 		print("Done.")
@@ -1686,7 +1686,7 @@ class Baseball_Scrapper:
 		driver.quit()
 
 
-		# In[41]:
+		# In[36]:
 
 
 		#More data cleaning
@@ -1718,7 +1718,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[42]:
+		# In[37]:
 
 
 		#Fix team names
@@ -1737,7 +1737,7 @@ class Baseball_Scrapper:
 		        frames[i]["Game_Starts_In"] = timedelta(days = 0)
 
 
-		# In[43]:
+		# In[38]:
 
 
 		#Unlist frames
@@ -1750,7 +1750,7 @@ class Baseball_Scrapper:
 		final_frame.loc[:, "Bet_On"] = final_frame["Bet_On"].str.replace("\n", " ")
 
 
-		# In[44]:
+		# In[39]:
 
 
 		#save
@@ -1768,7 +1768,7 @@ class Baseball_Scrapper:
 		print("Done.")
 
 
-		# In[45]:
+		# In[40]:
 
 
 		#obtain lineups
@@ -1782,7 +1782,7 @@ class Baseball_Scrapper:
 		    lineups[i] = self.Fix_Team_Names(lineups[i], "City")
 
 
-		# In[46]:
+		# In[41]:
 
 
 		#Fix player names
@@ -1815,7 +1815,7 @@ class Baseball_Scrapper:
 		    
 
 
-		# In[47]:
+		# In[42]:
 
 
 		#Save the lineups
@@ -1825,8 +1825,6 @@ class Baseball_Scrapper:
 		self.update_file(folder_path, "Pitch.csv", pitch)
 
 		print("Done (final).")
-
-
 
 
 
