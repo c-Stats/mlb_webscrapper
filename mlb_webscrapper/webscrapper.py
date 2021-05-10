@@ -626,7 +626,103 @@ class Baseball_Scrapper:
 					time.sleep(random.randint(2, 4))
 
 
+	#Extracts the box scores based off the URL list
+	def Extract_FanGraphs_Play_by_play(self):
 
+		#Extract the scores
+		scores_path = self.paths[2] + "/Clean_Data/FanGraphs_Scores.csv"
+		if not os.path.exists(scores_path):
+
+			print("Error: no game scores have been scraped and/or cleaned yet.")
+			print("Missing file at: " + scores_path)
+
+			return 0
+
+		scores = pd.read_csv(scores_path)
+		scores["Year"] = pd.DatetimeIndex(scores["Date"]).year
+
+		#Check if the directory where the file are to be saved exists
+		saving_dir = self.paths[2] + "/Play_by_play"
+		if not os.path.exists(saving_dir):
+
+			print("Creating directory at:" + saving_dir)
+			os.mkdir(saving_dir)
+
+
+		#Check matches that were already processed
+		processed_ID = []
+		files_in_dir = [f for f in listdir(saving_dir) if isfile(join(saving_dir, f))]
+
+		if len(files_in_dir) > 0:
+
+			flush = []
+
+			for file in files_in_dir:
+
+				#...
+				temp = pd.read_csv(saving_dir + "/" + file)
+				ids_done = list(set(list(temp["ID"])))
+
+				to_remove = [i for x, i in enumerate(list(scores["ID"])) if x in ids_done]
+				scores = scores.drop(to_remove).reset_index(drop = True)
+				
+
+		#Loop over seasons
+		seasons = np.sort(list(set(list(scores["Year"]))))
+		for season in seasons:
+
+			print("Processing data from year " + str(season) + "...")
+
+			#Loop over matches
+			to_process = scores.loc[np.where(scores["Year"] == season)[0]].reset_index(drop = True)
+
+			n_matches = len(to_process)
+			e_wait_time_min = round(5 * n_matches / 60)
+
+			h = int(np.floor(e_wait_time_min / 60))
+			e_wait_time_min -= 60 * h
+
+			print("Estimated processing time: " + str(h) + " hour(s) and " + str(int(e_wait_time_min)) + " minutes(s).")
+
+
+
+			all_plays = []
+			for i in tqdm(range(0, len(to_process))):
+
+				url = to_process.at[i, "URL"]
+
+				try:
+
+					html = requests.get(url).content
+					tables = pd.read_html(html)
+
+					tbl_len = [len(x) for x in tables]
+					at = tbl_len.index(max(tbl_len))
+
+					play_by_play = tables[at]
+
+					for col in to_process.columns:
+						play_by_play[col] = to_process.at[i, col]
+
+				except:
+					print("ERROR")
+					time.sleep(random.randint(2,4))
+
+					continue
+
+				if len(all_plays) == 0:
+						all_plays = play_by_play
+				else:
+					all_plays = all_plays.append(play_by_play, sort = True, ignore_index = True)
+
+				if (i + 1) % 100 == 0 or i == len(to_process) - 1:			
+
+					self.update_file(saving_dir, str(season) + ".csv", all_plays)	
+					all_plays = []
+
+					print("\t" + "\t" + "\t" + "***** PROGRESS SAVED *****")
+
+				time.sleep(random.randint(2,4))
 
 	###########################################################
 	#################### DATA CLEANING  #######################
