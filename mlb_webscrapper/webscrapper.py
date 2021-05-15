@@ -663,7 +663,7 @@ class Baseball_Scrapper:
 				temp = pd.read_csv(saving_dir + "/" + file)
 				ids_done = list(set(list(temp["ID"])))
 
-				to_remove = [i for x, i in enumerate(list(scores["ID"])) if x in ids_done]
+				to_remove = [i for i, x in enumerate(list(scores["ID"])) if x in ids_done]
 				scores = scores.drop(to_remove).reset_index(drop = True)
 				
 
@@ -1118,6 +1118,45 @@ class Baseball_Scrapper:
 			frame.to_csv(self.paths[3] + "/Clean_Data/MLB_Odds.csv", index = False)
 			print("\t" + "\t" + "***** MLB Moneyline data successfully formated *****")
 
+
+	def Extract_Scores_per_Inning(self):
+
+		#Check if the files have been scraped
+		extract_dir = self.paths[2] + "/Play_by_play"
+		if not os.path.exists(extract_dir):
+
+			print("Error: no play-by-plays have been scraped yet.")
+			print("Missing files at: " + extract_dir)
+
+
+
+		#Clean
+		files_in_dir = [f for f in listdir(extract_dir) if isfile(join(extract_dir, f))]
+		if len(files_in_dir) == 0:
+
+			print("Error: no play-by-plays have been scraped yet.")
+			print("Missing files at: " + extract_dir)
+
+
+		save_dir = self.paths[2] + "/Live_Scores"
+		if not os.path.exists(save_dir):
+
+			print("Creating directory at: " + save_dir)
+            
+			os.mkdir(save_dir)
+
+		#Saving scores wrt innings...
+		for file in tqdm(files_in_dir):
+
+			frame = pd.read_csv(extract_dir + "/" + file)
+
+			frame[["Score_Home_Live", "Score_Away_Live"]] = frame["Score"].str.split("-", expand = True)
+			frame["Score_Home_Live"] = frame["Score_Home_Live"].astype(int)
+			frame["Score_Away_Live"] = frame["Score_Away_Live"].astype(int)
+
+			frame = frame.loc[:, ["Date", "ID", "Team_Home", "Team_Away", "Inn.", "Score_Home_Live", "Score_Away_Live", "URL"]].drop_duplicates().reset_index(drop = True)
+
+			frame.to_csv(save_dir + "/" + file, index = False)						
 
 
 	###########################################################
