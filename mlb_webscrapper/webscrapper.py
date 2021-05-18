@@ -1182,10 +1182,18 @@ class Baseball_Scrapper:
 
 		self.Get_FanGraphs_Game_URLs(frm, to)
 		self.Extract_FanGraphs_Box_Scores()
+		self.Extract_FanGraphs_Play_by_play()
+
 
 		n_new = len(pd.read_csv(path_check))
 		if n_new > n:
+			print("Cleaning data...")
 			self.Clean_Data()
+			print("Scrapping lineups...")
+			self.Scrape_BASEBALL_REFERENCE_lineups()
+			print("Processing scores-per-inning frames...")
+			self.Extract_Scores_per_Inning()
+			print("Done.")
 		else:
 			print("No new Box Scores to scrape.")
 
