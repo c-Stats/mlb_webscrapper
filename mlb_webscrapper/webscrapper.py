@@ -26,6 +26,8 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 
+from dateutil import parser
+
 pd.options.mode.chained_assignment = None
 
 
@@ -1547,8 +1549,6 @@ class Baseball_Scrapper:
 
 	def Scrape_Bets(self):
 
-
-
 		try:
 		    driver = webdriver.Chrome()
 		except:
@@ -1831,10 +1831,8 @@ class Baseball_Scrapper:
 		# In[35]:
 
 
-		print("Done.")
-		print("Closing webdriver.")
-		driver.quit()
 
+		print("Cleaning LotoQc data...")
 
 		# In[36]:
 
@@ -1974,8 +1972,161 @@ class Baseball_Scrapper:
 		self.update_file(folder_path, "Bat.csv", bat)
 		self.update_file(folder_path, "Pitch.csv", pitch)
 
-		print("Done (final).")
+		print("Done with Loto Qc...")
+		print("Scrapping Pinnacle...")
+
+
+		url = "https://www.pinnacle.com/en/baseball/mlb/matchups"
+		driver.get(url)
+
+
+		# In[196]:
+
+
+		bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+
+		#Wait for item to load
+		while len(bets_url) == 0:
+		    bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+
+		bets_url = [x.get_attribute("href") for x in bets_url]
+
+		scrapping_time = datetime.now().replace(second = 0, microsecond = 0)
+
+
+		# In[197]:
+
+
+		all_frames = []
+
+		for u in tqdm(bets_url):
+
+		    driver.get(u)
+		    expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+		    #Wait for item to load
+		    while len(expand_buttons) == 0:
+		        expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+
+		    for b in expand_buttons:
+		        b.click()
+
+		    time.sleep(1)
+
+		    tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
+		    all_bets = []
+
+		    for t in tables:
+		        title = t.find_element_by_css_selector("span[class^='style_titleText']").text
+		        rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
+		        
+		        try:
+		            additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
+		            additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
+		        
+		        except:
+		            additional_info = [np.NaN, np.NaN]
+
+		        for r in rows:
+		            bets = r.find_elements_by_css_selector("button")
+		            cutoff = len(bets) / 2
+
+		            count = 0
+		            for b in bets:
+
+		                bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
+		                f = b.find_element_by_css_selector("span[class^='style_price']").text
+		 
+		                if count < cutoff:
+		                    all_bets.append([title, 9, bet_on, additional_info[0], f])
+		            
+		                else:
+		                    all_bets.append([title, 9, bet_on, additional_info[1], f])
+		                    
+		                count += 1
+		                    
+		    
+		    
+		    half_match_button = driver.find_element_by_css_selector("button[id='period:1']")
+		    half_match_button.click()
+		                    
+		    #Repeat, for half-matches
+		    expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+		    #Wait for item to load
+		    while len(expand_buttons) == 0:
+		        expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+
+		    for b in expand_buttons:
+		        b.click()
+
+		    time.sleep(1)
+
+		    tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
+
+		    for t in tables:
+		        title = t.find_element_by_css_selector("span[class^='style_titleText']").text
+		        rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
+		        
+		        try:
+		            additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
+		            additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
+		        
+		        except:
+		            additional_info = [np.NaN, np.NaN]
+
+		        for r in rows:
+		            bets = r.find_elements_by_css_selector("button")
+		            cutoff = len(bets) / 2
+
+		            count = 0
+		            for b in bets:
+
+		                bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
+		                f = b.find_element_by_css_selector("span[class^='style_price']").text
+		 
+		                if count < cutoff:
+		                    all_bets.append([title, 5, bet_on, additional_info[0], f])
+		            
+		                else:
+		                    all_bets.append([title, 5, bet_on, additional_info[1], f])
+		                    
+		                count += 1
 
 
 
+		    all_bets = pd.DataFrame(all_bets, columns = ["Bet_Type", "Inn.", "Bet_On", "Bet_On2", "Factor"])
+		    all_bets.loc[:, "Factor"] = all_bets["Factor"].astype(float)
+		    
+		    match_date = parser.parse(driver.find_element_by_css_selector("div[class^='style_startTime']").text)
+		    
+		    all_bets["Scrapping_Time"] = scrapping_time
+		    all_bets["Game_Time"] = match_date
+		    all_bets["Game_Starts_In"] = np.timedelta64((match_date - scrapping_time), "m") / np.timedelta64(1, 'm')
+		    
+		    
+		    
+		    all_frames.append(all_bets)
 
+		    
+		all_frames = pd.concat(all_frames)
+
+
+		# In[198]:
+
+
+		folder_path = self.paths[3] + "/Predicted_Lineups/" + datetime.now().strftime("%d-%m-%Y")
+		if not os.path.exists(folder_path):
+
+		    print("Creating directory at:")
+		    print(folder_path)
+
+		    os.mkdir(folder_path)
+
+		print("Saving...")
+		self.update_file(folder_path, "Bets_Pinnacle.csv", all_frames)
+
+
+		driver.quit()
