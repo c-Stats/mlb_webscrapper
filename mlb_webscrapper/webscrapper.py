@@ -2021,6 +2021,16 @@ class Baseball_Scrapper:
 
 			time.sleep(1)
 
+			try:
+				match_date = parser.parse(driver.find_element_by_css_selector("div[class^='style_startTime']").text)
+				time_diff = np.timedelta64((match_date - scrapping_time), "m") / np.timedelta64(1, 'm')
+				if time_diff >= 12*60:
+					continue
+
+			except:
+				continue
+
+
 			for t in tables:
 				try:
 					title = t.find_element_by_css_selector("span[class^='style_titleText']").text
@@ -2122,15 +2132,10 @@ class Baseball_Scrapper:
 			all_bets = pd.DataFrame(all_bets, columns = ["Bet_Type", "Inn.", "Bet_On", "Bet_On2", "Factor"])
 			all_bets.loc[:, "Factor"] = all_bets["Factor"].astype(float)
 
-			try:
-				match_date = parser.parse(driver.find_element_by_css_selector("div[class^='style_startTime']").text)
-
-			except:
-				continue
 
 			all_bets["Scrapping_Time"] = scrapping_time
 			all_bets["Game_Time"] = match_date
-			all_bets["Game_Starts_In"] = np.timedelta64((match_date - scrapping_time), "m") / np.timedelta64(1, 'm')
+			all_bets["Game_Starts_In"] = time_diff
 
 
 
