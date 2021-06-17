@@ -1986,8 +1986,10 @@ class Baseball_Scrapper:
 		bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
 
 		#Wait for item to load
-		while len(bets_url) == 0:
-		    bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+		ticks = 0
+		while len(bets_url) == 0 or ticks <= 4:
+			ticks += 1
+			bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
 
 		bets_url = [x.get_attribute("href") for x in bets_url]
 
@@ -2001,114 +2003,138 @@ class Baseball_Scrapper:
 
 		for u in tqdm(bets_url):
 
-		    driver.get(u)
-		    expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+			driver.get(u)
+			expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
 
-		    #Wait for item to load
-		    while len(expand_buttons) == 0:
-		        expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+			#Wait for item to load
+			while len(expand_buttons) == 0:
+			    expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
 
 
-		    for b in expand_buttons:
-		        b.click()
+			for b in expand_buttons:
+			    b.click()
 
-		    time.sleep(1)
+			time.sleep(1)
 
-		    tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
-		    all_bets = []
+			tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
+			all_bets = []
 
-		    for t in tables:
-		        title = t.find_element_by_css_selector("span[class^='style_titleText']").text
-		        rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
+			time.sleep(1)
+
+			for t in tables:
+				try:
+					title = t.find_element_by_css_selector("span[class^='style_titleText']").text
+					rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
+
+				except:
+					continue
 		        
-		        try:
-		            additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
-		            additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
-		        
-		        except:
-		            additional_info = [np.NaN, np.NaN]
+				try:
+					additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
+					additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
 
-		        for r in rows:
-		            bets = r.find_elements_by_css_selector("button")
-		            cutoff = len(bets) / 2
+				except:
+					additional_info = [np.NaN, np.NaN]
 
-		            count = 0
-		            for b in bets:
+				for r in rows:
+					bets = r.find_elements_by_css_selector("button")
+					cutoff = len(bets) / 2
 
-		                bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
-		                f = b.find_element_by_css_selector("span[class^='style_price']").text
-		 
-		                if count < cutoff:
-		                    all_bets.append([title, 9, bet_on, additional_info[0], f])
-		            
-		                else:
-		                    all_bets.append([title, 9, bet_on, additional_info[1], f])
-		                    
-		                count += 1
-		                    
-		    
-		    
-		    half_match_button = driver.find_element_by_css_selector("button[id='period:1']")
-		    half_match_button.click()
-		                    
-		    #Repeat, for half-matches
-		    expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+					count = 0
+					for b in bets:
 
-		    #Wait for item to load
-		    while len(expand_buttons) == 0:
-		        expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+						try:
+
+							bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
+							f = b.find_element_by_css_selector("span[class^='style_price']").text
+
+							if count < cutoff:
+								all_bets.append([title, 9, bet_on, additional_info[0], f])
+
+							else:
+								all_bets.append([title, 9, bet_on, additional_info[1], f])
+							    
+							count += 1
+
+						except:
+
+							count += 1
+
+				try:
+			    
+					half_match_button = driver.find_element_by_css_selector("button[id='period:1']")
+					half_match_button.click()
+					                
+					#Repeat, for half-matches
+					expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+					#Wait for item to load
+					while len(expand_buttons) == 0:
+						expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+					for b in expand_buttons:
+						b.click()
+
+					time.sleep(1)
+
+					tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
+
+					for t in tables:
+						title = t.find_element_by_css_selector("span[class^='style_titleText']").text
+						rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
+
+						try:
+							additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
+							additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
+
+						except:
+							additional_info = [np.NaN, np.NaN]
+
+						for r in rows:
+							bets = r.find_elements_by_css_selector("button")
+							cutoff = len(bets) / 2
+
+							count = 0
+							for b in bets:
+
+								try:
+
+									bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
+									f = b.find_element_by_css_selector("span[class^='style_price']").text
+
+									if count < cutoff:
+										all_bets.append([title, 5, bet_on, additional_info[0], f])
+
+									else:
+										all_bets.append([title, 5, bet_on, additional_info[1], f])
+									    
+									count += 1
+								
+								except:
+
+										count += 1
 
 
-		    for b in expand_buttons:
-		        b.click()
+				except:
 
-		    time.sleep(1)
+					pass
 
-		    tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
+			all_bets = pd.DataFrame(all_bets, columns = ["Bet_Type", "Inn.", "Bet_On", "Bet_On2", "Factor"])
+			all_bets.loc[:, "Factor"] = all_bets["Factor"].astype(float)
 
-		    for t in tables:
-		        title = t.find_element_by_css_selector("span[class^='style_titleText']").text
-		        rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
-		        
-		        try:
-		            additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
-		            additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
-		        
-		        except:
-		            additional_info = [np.NaN, np.NaN]
+			try:
+				match_date = parser.parse(driver.find_element_by_css_selector("div[class^='style_startTime']").text)
 
-		        for r in rows:
-		            bets = r.find_elements_by_css_selector("button")
-		            cutoff = len(bets) / 2
+			except:
+				continue
 
-		            count = 0
-		            for b in bets:
-
-		                bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
-		                f = b.find_element_by_css_selector("span[class^='style_price']").text
-		 
-		                if count < cutoff:
-		                    all_bets.append([title, 5, bet_on, additional_info[0], f])
-		            
-		                else:
-		                    all_bets.append([title, 5, bet_on, additional_info[1], f])
-		                    
-		                count += 1
+			all_bets["Scrapping_Time"] = scrapping_time
+			all_bets["Game_Time"] = match_date
+			all_bets["Game_Starts_In"] = np.timedelta64((match_date - scrapping_time), "m") / np.timedelta64(1, 'm')
 
 
 
-		    all_bets = pd.DataFrame(all_bets, columns = ["Bet_Type", "Inn.", "Bet_On", "Bet_On2", "Factor"])
-		    all_bets.loc[:, "Factor"] = all_bets["Factor"].astype(float)
-		    
-		    match_date = parser.parse(driver.find_element_by_css_selector("div[class^='style_startTime']").text)
-		    
-		    all_bets["Scrapping_Time"] = scrapping_time
-		    all_bets["Game_Time"] = match_date
-		    all_bets["Game_Starts_In"] = np.timedelta64((match_date - scrapping_time), "m") / np.timedelta64(1, 'm')
-		    
-		    
-		    
-		    all_frames.append(all_bets)
+			all_frames.append(all_bets)
 
 		    
 		all_frames = pd.concat(all_frames)
