@@ -1987,7 +1987,7 @@ class Baseball_Scrapper:
 
 		#Wait for item to load
 		ticks = 0
-		while len(bets_url) == 0 or ticks <= 4:
+		while len(bets_url) == 0 and ticks <= 4:
 			time.sleep(1)
 			ticks += 1
 			bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
@@ -2009,14 +2009,14 @@ class Baseball_Scrapper:
 
 			#Wait for item to load
 			ticks = 0
-			while len(expand_buttons) == 0 or ticks <= 4:
+			while len(expand_buttons) == 0 and ticks <= 4:
 				time.sleep(1)
 				ticks += 1
 				expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
 
-
-			for b in expand_buttons:
-			    b.click()
+			if len(expand_buttons) > 0:
+				for b in expand_buttons:
+					b.click()
 
 			time.sleep(1)
 
@@ -2084,7 +2084,7 @@ class Baseball_Scrapper:
 
 					#Wait for item to load
 					ticks = 0
-					while len(expand_buttons) == 0 or ticks <= 4:
+					while len(expand_buttons) == 0 and ticks <= 4:
 						time.sleep(1)
 						ticks += 1
 						expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
