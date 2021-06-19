@@ -1879,10 +1879,10 @@ class Baseball_Scrapper:
 
 		    if str(type(frames[i].at[0, "Game_Time"])) == "<class 'pandas._libs.tslibs.timestamps.Timestamp'>":
 		        frames[i]["Game_Started"] = False
-		        frames[i]["Game_Starts_In"] = frames[i]["Game_Time"] - frames[i]["Scrapping_Time"]
+		        frames[i]["Minutes_Until_Start"] = frames[i]["Game_Time"] - frames[i]["Scrapping_Time"]
 		    else:
 		        frames[i]["Game_Started"] = True
-		        frames[i]["Game_Starts_In"] = timedelta(days = 0)
+		        frames[i]["Minutes_Until_Start"] = timedelta(days = 0)
 
 
 		# In[38]:
@@ -2074,68 +2074,69 @@ class Baseball_Scrapper:
 
 							count += 1
 
-				try:
-			    
-					half_match_button = driver.find_element_by_css_selector("button[id='period:1']")
-					half_match_button.click()
-					                
-					#Repeat, for half-matches
+			try:
+		    
+				half_match_button = driver.find_element_by_css_selector("button[id='period:1']")
+				time.sleep(1)
+				half_match_button.click()
+				                
+				#Repeat, for half-matches
+				expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+				#Wait for item to load
+				ticks = 0
+				while len(expand_buttons) == 0 and ticks <= 4:
+					time.sleep(1)
+					ticks += 1
 					expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
 
-					#Wait for item to load
-					ticks = 0
-					while len(expand_buttons) == 0 and ticks <= 4:
-						time.sleep(1)
-						ticks += 1
-						expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
 
+				for b in expand_buttons:
+					b.click()
 
-					for b in expand_buttons:
-						b.click()
+				time.sleep(1)
 
-					time.sleep(1)
+				tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
 
-					tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
+				for t in tables:
+					title = t.find_element_by_css_selector("span[class^='style_titleText']").text
+					rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
 
-					for t in tables:
-						title = t.find_element_by_css_selector("span[class^='style_titleText']").text
-						rows = t.find_elements_by_css_selector("div[class^='style_buttonRow']")
+					try:
+						additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
+						additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
 
-						try:
-							additional_info = t.find_element_by_css_selector("ul[class^='style_subHeading']")
-							additional_info = [x.text for x in additional_info.find_elements_by_css_selector("li")]
+					except:
+						additional_info = [np.NaN, np.NaN]
 
-						except:
-							additional_info = [np.NaN, np.NaN]
+					for r in rows:
+						bets = r.find_elements_by_css_selector("button")
+						cutoff = len(bets) / 2
 
-						for r in rows:
-							bets = r.find_elements_by_css_selector("button")
-							cutoff = len(bets) / 2
+						count = 0
+						for b in bets:
 
-							count = 0
-							for b in bets:
+							try:
 
-								try:
+								bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
+								f = b.find_element_by_css_selector("span[class^='style_price']").text
 
-									bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
-									f = b.find_element_by_css_selector("span[class^='style_price']").text
+								if count < cutoff:
+									all_bets.append([title, 5, bet_on, additional_info[0], f])
 
-									if count < cutoff:
-										all_bets.append([title, 5, bet_on, additional_info[0], f])
+								else:
+									all_bets.append([title, 5, bet_on, additional_info[1], f])
+								    
+								count += 1
+							
+							except:
 
-									else:
-										all_bets.append([title, 5, bet_on, additional_info[1], f])
-									    
 									count += 1
-								
-								except:
-
-										count += 1
 
 
-				except:
+			except:
 
-					pass
+				pass
 
 			all_bets = pd.DataFrame(all_bets, columns = ["Bet_Type", "Inn.", "Bet_On", "Bet_On2", "Factor"])
 			all_bets.loc[:, "Factor"] = all_bets["Factor"].astype(float)
@@ -2143,17 +2144,91 @@ class Baseball_Scrapper:
 
 			all_bets["Scrapping_Time"] = scrapping_time
 			all_bets["Game_Time"] = match_date
-			all_bets["Game_Starts_In"] = time_diff
+			all_bets["Minutes_Until_Start"] = time_diff
 
+			teams = [x.replace("-", " ").title() for x in u.split("/")[-2].split("-vs-")]
 
+			all_bets["Team_Home"] = teams[1]
+			all_bets["Team_Away"] = teams[0]
 
+			all_bets.loc[:, "Bet_On"] = ["Home" if teams[1] in str(x) else "Away" if teams[0] in str(x) else x for x in list(all_bets["Bet_On"])]
+			all_bets.loc[:, "Bet_On2"] = ["Home" if teams[1] in str(x) else "Away" if teams[0] in str(x) else "None" for x in list(all_bets["Bet_On2"])]
+
+			index = np.where(np.logical_or(all_bets["Bet_On"] == "Home", all_bets["Bet_On"] == "Away"))[0]
+			if len(index) > 0:
+				all_bets.loc[index, "Bet_On2"] = all_bets.loc[index, "Bet_On"]
+
+			all_bets = self.Fix_Team_Names(all_bets, "City")
 			all_frames.append(all_bets)
 
 		    
 		all_frames = pd.concat(all_frames)
+		all_frames = all_frames.reset_index(drop = True)
 
 
-		# In[198]:
+		#Formating
+		def g(x):
+			x = str(x)
+			if "Under" in x or "Over" in x:
+				return float(x.split(" ")[-1])
+			else:
+
+				try:
+					return float(x)
+				except:
+					return 0.0
+
+		all_frames["Bet_Type2"] = [g(x) for x in list(all_frames["Bet_On"])]
+
+
+		temp = list(all_frames["Bet_On"])
+		temp2 = list(all_frames["Bet_On2"])
+
+		for j in range(0, len(temp)):
+
+			if "Under" in temp[j]:
+
+				all_frames.at[j, "Bet_On"] = "Below"
+
+			elif "Over" in temp[j]:
+
+				all_frames.at[j, "Bet_On"] = "Above"
+
+			elif temp2[j] == "Home":
+
+				all_frames.at[j, "Bet_On"] = all_frames.at[j, "Team_Home"]
+
+			elif temp2[j] == "Away":
+
+				all_frames.at[j, "Bet_On"] = all_frames.at[j, "Team_Away"]
+
+			else:
+
+				all_frames.at[j, "Bet_On"] = "None"
+
+
+		
+
+		for j in range(0, len(all_frames)):
+
+			if "Team Total" in all_frames.at[j, "Bet_Type"]:
+
+				all_frames.at[j, "Bet_Type"] = "POINTS"
+
+			elif "Total" in all_frames.at[j, "Bet_Type"]:
+
+				all_frames.at[j, "Bet_Type"] = "SUM"
+
+			elif "Handicap" in all_frames.at[j, "Bet_Type"]:
+
+				all_frames.at[j, "Bet_Type"] = "SPREAD"
+
+			elif "Moneyline" in all_frames.at[j, "Bet_Type"]:
+
+				all_frames.at[j, "Bet_Type"] = "WINNER"
+
+
+		all_frames.loc[:, "Date"] = all_frames["Game_Time"].dt.date
 
 
 		folder_path = self.paths[3] + "/Predicted_Lineups/" + datetime.now().strftime("%d-%m-%Y")
