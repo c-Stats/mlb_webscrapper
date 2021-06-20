@@ -2050,6 +2050,11 @@ class Baseball_Scrapper:
 				except:
 					additional_info = [np.NaN, np.NaN]
 
+
+				nrow = len(rows)
+				rcount = 0
+				rcount_cutoff = len(rows) / 2
+
 				for r in rows:
 					bets = r.find_elements_by_css_selector("button")
 					cutoff = len(bets) / 2
@@ -2062,17 +2067,32 @@ class Baseball_Scrapper:
 							bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
 							f = b.find_element_by_css_selector("span[class^='style_price']").text
 
-							if count < cutoff:
-								all_bets.append([title, 9, bet_on, additional_info[0], f])
+							if not "Team Total" in title: 
+
+								if count < cutoff:
+									all_bets.append([title, 9, bet_on, additional_info[0], f])
+
+								else:
+									all_bets.append([title, 9, bet_on, additional_info[1], f])
+								    
+								count += 1
 
 							else:
-								all_bets.append([title, 9, bet_on, additional_info[1], f])
-							    
-							count += 1
+
+								if rcount < rcount_cutoff:
+									all_bets.append([title, 9, bet_on, additional_info[0], f])
+
+								else:
+									all_bets.append([title, 9, bet_on, additional_info[1], f])
+								    
+								count += 1
+
 
 						except:
 
 							count += 1
+
+					rcount += 1
 
 			try:
 		    
@@ -2109,6 +2129,10 @@ class Baseball_Scrapper:
 					except:
 						additional_info = [np.NaN, np.NaN]
 
+					nrow = len(rows)
+					rcount = 0
+					rcount_cutoff = len(rows) / 2
+
 					for r in rows:
 						bets = r.find_elements_by_css_selector("button")
 						cutoff = len(bets) / 2
@@ -2121,17 +2145,32 @@ class Baseball_Scrapper:
 								bet_on = b.find_element_by_css_selector("span[class^='style_label']").text
 								f = b.find_element_by_css_selector("span[class^='style_price']").text
 
-								if count < cutoff:
-									all_bets.append([title, 5, bet_on, additional_info[0], f])
+								if not "Team Total" in title: 
+
+									if count < cutoff:
+										all_bets.append([title, 9, bet_on, additional_info[0], f])
+
+									else:
+										all_bets.append([title, 9, bet_on, additional_info[1], f])
+									    
+									count += 1
 
 								else:
-									all_bets.append([title, 5, bet_on, additional_info[1], f])
-								    
-								count += 1
-							
+
+									if rcount < rcount_cutoff:
+										all_bets.append([title, 9, bet_on, additional_info[0], f])
+
+									else:
+										all_bets.append([title, 9, bet_on, additional_info[1], f])
+									    
+									count += 1
+
+
 							except:
 
-									count += 1
+								count += 1
+
+						rcount += 1
 
 
 			except:
