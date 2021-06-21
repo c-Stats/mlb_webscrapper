@@ -1670,6 +1670,7 @@ class Baseball_Scrapper:
 
 
 		#process all pages
+		scrapped_at = datetime.now().replace(second = 0, microsecond = 0)
 
 		frames = []
 
@@ -1779,7 +1780,7 @@ class Baseball_Scrapper:
 		            
 		    
 		    #Add the date and time
-		    bet_frames["Scrapping_Time"] = datetime.now().replace(second = 0, microsecond = 0)
+		    bet_frames["Scrapping_Time"] = scrapped_at
 		    
 		    frames.append(bet_frames)
 		    
@@ -1994,7 +1995,7 @@ class Baseball_Scrapper:
 
 		bets_url = [x.get_attribute("href") for x in bets_url]
 
-		scrapping_time = datetime.now().replace(second = 0, microsecond = 0)
+		scrapping_time = scrapped_at
 
 
 		# In[197]:
