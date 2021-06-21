@@ -2205,6 +2205,12 @@ class Baseball_Scrapper:
 		all_frames = pd.concat(all_frames)
 		all_frames = all_frames.reset_index(drop = True)
 
+		all_frames["Team_Home"] = [str(x) for x in all_frames["Team_Home"]]
+		all_frames["Team_Away"] = [str(x) for x in all_frames["Team_Away"]]
+
+		all_frames = all_frames.loc[np.where(np.logical_and(all_frames["Team_Home"] != "None", all_frames["Team_Away"] != "None"))[0]]
+		all_frames = all_frames.reset_index(drop = True)
+
 
 		#Formating
 		def g(x):
