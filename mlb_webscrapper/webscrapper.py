@@ -2224,6 +2224,14 @@ class Baseball_Scrapper:
 				except:
 					return 0.0
 
+		#Remove bets causing formating errors
+		rmv = [i for i,x in enumerate(list(all_frames["Bet_On"])) if "Errors" in str(x)]
+		if len(rmv) > 0:
+
+			all_frames = all_frames.drop(rmv).reset_index(drop = True)
+
+
+
 		all_frames["Bet_Type2"] = [g(x) for x in list(all_frames["Bet_On"])]
 
 
