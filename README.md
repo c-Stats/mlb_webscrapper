@@ -53,7 +53,7 @@ scapper.Scrape_BASEBALL_REFERENCE_lineups()
 scrapper.UPDATE_FanGraphs_Box_Scores()
 ```
 
-# Web-scraping LotoQuebec's moneylines
+# Web-scraping LotoQuebec's and Pinnacle's moneylines
 
 ```python
 #Webscrapes the current moneylines offered on Loto-Quebec's Mise-o-jeu gambling website.
