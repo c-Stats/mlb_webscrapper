@@ -1194,8 +1194,8 @@ class Baseball_Scrapper:
 			print("Scrapping lineups...")
 			self.Scrape_BASEBALL_REFERENCE_lineups()
 			print("Processing scores-per-inning frames...")
-			self.Extract_Scores_per_Inning()
-			print("Done.")
+			#self.Extract_Scores_per_Inning()
+			#print("Done.")
 		else:
 			print("No new Box Scores to scrape.")
 
