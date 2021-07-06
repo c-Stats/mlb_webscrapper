@@ -66,6 +66,7 @@ class Baseball_Scrapper:
 			self.dictio = pd.read_csv(dictio_path)
 		else:
 			self.dictio = []
+			print("MISSING FILE AT:" + str(dictio_path))
 
 
 		print("Scapper succesfully initiated.")
@@ -2149,20 +2150,20 @@ class Baseball_Scrapper:
 								if not "Team Total" in title: 
 
 									if count < cutoff:
-										all_bets.append([title, 9, bet_on, additional_info[0], f])
+										all_bets.append([title, 5, bet_on, additional_info[0], f])
 
 									else:
-										all_bets.append([title, 9, bet_on, additional_info[1], f])
+										all_bets.append([title, 5, bet_on, additional_info[1], f])
 									    
 									count += 1
 
 								else:
 
 									if rcount < rcount_cutoff:
-										all_bets.append([title, 9, bet_on, additional_info[0], f])
+										all_bets.append([title, 5, bet_on, additional_info[0], f])
 
 									else:
-										all_bets.append([title, 9, bet_on, additional_info[1], f])
+										all_bets.append([title, 5, bet_on, additional_info[1], f])
 									    
 									count += 1
 
