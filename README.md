@@ -60,3 +60,7 @@ scrapper.UPDATE_FanGraphs_Box_Scores()
 
 scrapper.Betting_Webscrape()
 ```
+
+# NOTE:
+
+In order to make use of the following package, one must copy the Abreviations_Dictionary.csv file at path\MLB_Modeling\Misc.
