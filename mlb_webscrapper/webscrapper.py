@@ -1806,6 +1806,7 @@ class Baseball_Scrapper:
 		for i in range(0, len(times)):
 		    
 		    refs_and_teams = match_urls[i].rsplit("/", 1)[-1].split("--")
+		    frames[i].loc[:, "Bet_Type"] = frames[i]["Bet_Type"].str.upper()
 		    
 		    teams = list(frames[i].loc[np.where(frames[0]["Bet_Type"] == "GAGNANT À 2 ISSUES")[0]]["Bet_On"])
 		    teams = [x.replace("(", "").replace(")", "") for x in teams]
