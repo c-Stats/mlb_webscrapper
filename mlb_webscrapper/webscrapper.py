@@ -1611,51 +1611,58 @@ class Baseball_Scrapper:
             
         #Process the game times
         for i in range(0, len(times)):
+
+            try:
             
-            gametime = np.NaN   
+                gametime = np.NaN   
 
-            if "Demain" in times[i]:
+                if "Demain" in times[i]:
 
-                tmrw_time = times[i].split(" ")[-1].split(":")
-                gametime = datetime.now() + timedelta(days = 1)
-                gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+                    tmrw_time = times[i].split(" ")[-1].split(":")
+                    gametime = datetime.now() + timedelta(days = 1)
+                    gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
 
 
-            elif "Aujourd'hui" in times[i]:
+                elif "Aujourd'hui" in times[i]:
 
-                tmrw_time = times[i].split(" ")[-1].split(":")
-                gametime = datetime.now() 
-                gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-                
-            elif "s" in times[i] or "m" in times[i] or "h" in times[i]:
+                    tmrw_time = times[i].split(" ")[-1].split(":")
+                    gametime = datetime.now() 
+                    gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+                    
+                elif "s" in times[i] or "m" in times[i] or "h" in times[i]:
 
-                vals = times[i].split(" ")
-                h = 0
-                m = 0
+                    vals = times[i].split(" ")
+                    h = 0
+                    m = 0
 
-                for x in vals:
+                    for x in vals:
 
-                    if "h" in x:
-                        h += int(x.replace("h", ""))
+                        if "h" in x:
+                            h += int(x.replace("h", ""))
 
-                    elif "m" in x:
-                        m += int(x.replace("m", ""))
+                        elif "m" in x:
+                            m += int(x.replace("m", ""))
 
-                    elif "s" in x:
-                        m += round(float(x.replace("s", "")) / 60.0)
+                        elif "s" in x:
+                            m += round(float(x.replace("s", "")) / 60.0)
 
-                gametime = datetime.now()
-                gametime += timedelta(hours = h, minutes = m)
-                gametime = gametime.replace(second = 0, microsecond = 0)         
-                
+                    gametime = datetime.now()
+                    gametime += timedelta(hours = h, minutes = m)
+                    gametime = gametime.replace(second = 0, microsecond = 0)         
+                    
 
-            elif ":" in times[i]:
+                elif ":" in times[i]:
 
-                tmrw_time = times[i].split(":")
-                gametime = datetime.now() 
-                gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
-            
-            times[i] = gametime
+                    tmrw_time = times[i].split(":")
+                    gametime = datetime.now() 
+                    gametime = gametime.replace(hour = int(tmrw_time[0]), minute = int(tmrw_time[1]), second = 0, microsecond = 0) 
+     
+
+                times[i] = gametime
+
+            except:
+
+                continue
 
 
         # In[32]:
@@ -1680,8 +1687,15 @@ class Baseball_Scrapper:
         print("Estimated processing time: " + str(estimated_w_time) + "min(s)")
 
         to_remove = []
-        k = 0
+        k = -1
         for url in tqdm(match_urls):
+
+            k += 1
+
+            if type(times[k]) == str:
+                to_remove.append(k)
+                continue
+
             
             driver.get(url)
             
