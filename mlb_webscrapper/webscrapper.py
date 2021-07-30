@@ -2051,8 +2051,12 @@ class Baseball_Scrapper:
 
         bets_url = [x.get_attribute("href") for x in bets_url]
 
-        scrapping_time = scrapped_at
+        if len(bets_url) == 0:
 
+            bets_url = driver.find_elements_by_css_selector("[class^='style_metadata']")
+            bets_url = [x.find_elements_by_css_selector("*")[0].get_attribute("href") for x in bets_url]
+
+        scrapping_time = scrapped_at
 
         # In[197]:
 
