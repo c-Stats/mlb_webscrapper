@@ -27,6 +27,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 
 from dateutil import parser
+import functools
 
 pd.options.mode.chained_assignment = None
 
@@ -2357,4 +2358,148 @@ class Baseball_Scrapper:
         self.update_file(folder_path, "Bets_Pinnacle.csv", all_frames)
 
 
+        def process_row(row):
+
+            game_info = row.find_element_by_css_selector("[class^=compactBettingOptionContainer]")
+
+            game_time = game_info.find_element_by_css_selector("[class^=timeContainer]")
+            game_time = game_time.text.split("\n")[0]
+            
+            hour = int(game_time.split(":")[0])
+            if "PM" in game_time:
+                hour += 12
+
+            minutes = int(game_time.split(":")[-1].split(" ")[0])
+
+            game_time = datetime.today().replace(hour = hour, minute = minutes, second = 0, microsecond = 0)
+
+            if game_time < datetime.today():
+
+                print("Game has already started.")
+                return None
+
+            participants = game_info.find_elements_by_css_selector("[class^=participantContainer]")
+            participants = [x.text for x in participants]
+            participants = [x.split("\n")[1] for x in participants]
+
+            row = row.find_element_by_css_selector("[class^=consensusAndoddsContainer]")
+            values = row.find_elements_by_css_selector("[class^=oddsNumber]")
+
+            visitor = [x.text for i,x in enumerate(values) if i % 2 == 0]
+            home = [x.text for i,x in enumerate(values) if i % 2 == 1]
+
+            del visitor[0:2]
+            del home[0:2]
+
+            #visitor = [float(x) if x not in ["-", ""] else x for x in visitor]
+            #home = [float(x) if x not in ["-", ""] else x for x in home]
+
+            visitor = [participants[0]] + [game_time] + ["Away"] + visitor
+            home = [participants[1]] + [game_time] + ["Home"] + home
+
+            out = pd.DataFrame([visitor, home])
+
+            return out
+
+
+        print("Scrapping SBR...")
+
+        urls = ["https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/",
+                "https://www.sportsbookreview.com/betting-odds/mlb-baseball/totals/",
+                "https://www.sportsbookreview.com/betting-odds/mlb-baseball/pointspread/"]
+
+        bet_types = ["WINNER",
+                        "SUM",
+                        "SPREAD"]
+
+        frames = []
+
+        for j in range(0, len(urls)):
+
+            driver.get(urls[j])
+            temporary_frames = []
+
+            while True:
+
+                rows = driver.find_elements_by_css_selector("[class^='eventMarketGridContainer']")
+                while len(rows) == 0:
+                    time.sleep(1)
+                    rows = driver.find_elements_by_css_selector("[class^='eventMarketGridContainer']")
+
+
+                previous_time = datetime.today()
+                next_time = previous_time + timedelta(hours = 1)
+
+                all_rows = []
+                i = -1
+                while next_time >= previous_time:
+
+                    i += 1
+
+                    if len(all_rows) > 0:
+                        previous_time = all_rows[-1].at[0, 1]
+
+                    try:
+                        new_row = process_row(rows[i])
+                    except:
+                        rows = driver.find_elements_by_css_selector("[class^='eventMarketGridContainer']")
+                        new_row = process_row(rows[i])
+
+                    if str(type(new_row)) == "<class 'NoneType'>":
+                        continue
+
+                    else:
+                        next_time = new_row.at[0, 1]
+                        all_rows.append(new_row)
+
+                del all_rows[-1]
+
+                all_rows = pd.concat(all_rows, axis = 0)
+
+
+                sources = driver.find_elements_by_css_selector("[class^='sportbook']")
+                while len(sources) == 0:
+                    time.sleep(1)
+                    sources = driver.find_elements_by_css_selector("[class^='sportbook']")
+
+                sources = [x for x in sources if len(x.find_elements_by_css_selector("[rel^='nofollow']")) > 0]
+                sources = [x.find_element_by_css_selector("[rel^='nofollow']").get_attribute("href").split("/")[-1].split("-")[0] for x in sources]
+
+                del sources[0]
+
+                all_rows.columns = ["Team"] + ["Match_Time"] + ["Location"] + sources
+
+                temporary_frames.append(all_rows)
+
+
+                next_page_button = driver.find_elements_by_class_name("sbr-icon-chevron-right")
+                if len(next_page_button) == 0:
+                    break
+                else:
+                    next_page_button[0].click()
+                    time.sleep(3)
+
+
+            out = functools.reduce(lambda x, y: pd.merge(x, y), temporary_frames)
+            out.insert(0, "Bet_Type", list(np.repeat(bet_types[j], np.shape(out)[0], axis = 0)))
+
+            frames.append(out)
+
+
+        all_lines = pd.concat(frames, axis = 0)
+        all_lines = self.Fix_Team_Names(all_lines, "City")
+
+        all_lines.insert(0, "Scrapping_Time", list(np.repeat(scrapped_at, np.shape(all_lines)[0], axis = 0)))
+        all_lines.insert(0, "Date", list(np.repeat(scrapped_at.date(), np.shape(all_lines)[0], axis = 0)))
+
+        to_format = [x for x in all_lines.columns if x not in ['Date', 'Scrapping_Time', 'Bet_Type', 'Team', 'Match_Time', 'Location']]
+        for j in range(0, len(to_format)):
+            all_lines.loc[:, to_format[j]] = all_lines[to_format[j]].str.replace("½", ".5")
+
+
+        
+
+        self.update_file(folder_path, "SBR_data.csv", all_lines)
+
         driver.quit()
+        print("Done.")

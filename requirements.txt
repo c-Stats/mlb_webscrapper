@@ -8,3 +8,4 @@ path.py==12.0.1
 selenium==3.141.0
 os
 dateutil==2.8.1
+functools
