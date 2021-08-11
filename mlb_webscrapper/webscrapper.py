@@ -2366,7 +2366,7 @@ class Baseball_Scrapper:
             game_time = game_time.text.split("\n")[0]
             
             hour = int(game_time.split(":")[0])
-            if "PM" in game_time:
+            if "PM" in game_time and int(game_time[0:2]) != 12:
                 hour += 12
 
             minutes = int(game_time.split(":")[-1].split(" ")[0])
@@ -2462,9 +2462,15 @@ class Baseball_Scrapper:
                     time.sleep(1)
                     sources = driver.find_elements_by_css_selector("[class^='sportbook']")
 
-                sources = [x for x in sources if len(x.find_elements_by_css_selector("[rel^='nofollow']")) > 0]
-                sources = [x.find_element_by_css_selector("[rel^='nofollow']").get_attribute("href").split("/")[-1].split("-")[0] for x in sources]
+                try:
+                    sources = [x for x in sources if len(x.find_elements_by_css_selector("[rel^='nofollow']")) > 0]
+                    sources = [x.find_element_by_css_selector("[rel^='nofollow']").get_attribute("href").split("/")[-1].split("-")[0] for x in sources]
 
+                except:
+                    sources = driver.find_elements_by_css_selector("[class^='sportbook']")
+                    sources = [x for x in sources if len(x.find_elements_by_css_selector("[rel^='nofollow']")) > 0]
+                    sources = [x.find_element_by_css_selector("[rel^='nofollow']").get_attribute("href").split("/")[-1].split("-")[0] for x in sources]
+                    
                 del sources[0]
 
                 all_rows.columns = ["Team"] + ["Match_Time"] + ["Location"] + sources
