@@ -2037,6 +2037,10 @@ class Baseball_Scrapper:
         url = "https://www.pinnacle.com/en/baseball/mlb/matchups"
         driver.get(url)
 
+        dismiss = driver.find_elements_by_xpath("//*[text()='Dismiss']")
+        if len(dismiss) > 0:
+            dismiss[0].click()
+
 
         # In[196]:
 
@@ -2076,11 +2080,19 @@ class Baseball_Scrapper:
                 ticks += 1
                 expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
 
+            dismiss = driver.find_elements_by_xpath("//*[text()='Dismiss']")
+            if len(dismiss) > 0:
+                dismiss[0].click()
+
             if len(expand_buttons) > 0:
                 for b in expand_buttons:
-                    b.click()
+                    try:
+                        b.click()
+                    except:
+                        pass
 
             time.sleep(1)
+
 
             tables = driver.find_elements_by_css_selector("div[data-collapsed='false']")
             all_bets = []
@@ -2171,6 +2183,11 @@ class Baseball_Scrapper:
                     time.sleep(1)
                     ticks += 1
                     expand_buttons = driver.find_elements_by_css_selector("span[class^='style_toggleMarkets']")
+
+
+                dismiss = driver.find_elements_by_xpath("//*[text()='Dismiss']")
+                if len(dismiss) > 0:
+                    dismiss[0].click()
 
 
                 for b in expand_buttons:
