@@ -2045,21 +2045,24 @@ class Baseball_Scrapper:
         # In[196]:
 
 
-        bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+        #bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+        bets_url = driver.find_elements_by_css_selector("[class = 'style_metadata__DPrQU']")
 
         #Wait for item to load
         ticks = 0
         while len(bets_url) == 0 and ticks <= 4:
             time.sleep(1)
             ticks += 1
-            bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+            #bets_url = driver.find_elements_by_css_selector("[data-test-id='Event.MarketCnt']")
+            bets_url = driver.find_elements_by_css_selector("[class = 'style_metadata__DPrQU']")
 
-        bets_url = [x.get_attribute("href") for x in bets_url]
+        #bets_url = [x.get_attribute("href") for x in bets_url]
+        bets_url = [x.find_element_by_tag_name("div").find_element_by_tag_name("a").get_attribute("href") for x in bets_url]
 
-        if len(bets_url) == 0:
+        #if len(bets_url) == 0:
 
-            bets_url = driver.find_elements_by_css_selector("[class^='style_metadata']")
-            bets_url = [x.find_elements_by_css_selector("*")[0].get_attribute("href") for x in bets_url]
+            #bets_url = driver.find_elements_by_css_selector("[class^='style_metadata']")
+            #bets_url = [x.find_elements_by_css_selector("*")[0].get_attribute("href") for x in bets_url]
 
         scrapping_time = scrapped_at
 
